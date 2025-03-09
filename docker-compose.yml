@@ -7,7 +7,7 @@ services:
     container_name: eeg-mongodb
     restart: always
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
       - mongodb_data:/data/db
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
@@ -26,13 +26,13 @@ services:
     container_name: eeg-backend
     restart: always
     ports:
-      - "5000:5000"
+      - "4000:5000"
     depends_on:
       - mongodb
     environment:
       - NODE_ENV=development
       - PORT=5000
-      - MONGODB_URI=mongodb://admin:password@mongodb:27017/eeg_database?authSource=admin
+      - MONGODB_URI=mongodb://admin:password@mongodb:27018/eeg_database?authSource=admin
       - JWT_SECRET=your_jwt_secret_key_change_this_in_production
       - UPLOAD_DIR=/app/uploads
     volumes:
@@ -72,7 +72,7 @@ services:
   #      - ./eeg-processor:/app
   #      - /app/__pycache__
   #    environment:
-  #      - MONGODB_URI=mongodb://admin:password@mongodb:27017/eeg_database?authSource=admin
+  #      - MONGODB_URI=mongodb://admin:password@mongodb:27018/eeg_database?authSource=admin
   #      - DATA_DIR=/app/data
   #    networks:
   #      - eeg-network

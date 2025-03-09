@@ -1,0 +1,59 @@
+eeg-bids-mongodb/
+├── .env                          # Environment variables
+├── docker-compose.yml            # Docker Compose configuration
+├── mongo-init.js                 # MongoDB initialization script
+├── README.md                     # Project documentation
+│
+├── backend/                      # Node.js Express backend
+│   ├── Dockerfile                # Backend Docker configuration
+│   ├── package.json              # Node.js dependencies
+│   ├── server.js                 # Main server entry point
+│   ├── uploads/                  # Directory for temporary uploads
+│   ├── models/                   # MongoDB schema models
+│   │   ├── User.js               # User model
+│   │   └── EEGData.js            # EEG data model
+│   ├── routes/                   # API route handlers
+│   │   ├── authRoutes.js         # Authentication routes
+│   │   ├── userRoutes.js         # User management routes
+│   │   └── eegRoutes.js          # EEG data routes
+│   ├── middleware/               # Express middleware
+│   │   ├── auth.js               # Authentication middleware
+│   │   └── upload.js             # File upload middleware
+│   └── services/                 # Business logic services
+│       └── eegProcessing.js      # EEG file processing service
+│
+├── frontend/                     # React frontend
+│   ├── Dockerfile                # Frontend Docker configuration
+│   ├── package.json              # React dependencies
+│   ├── public/                   # Static assets
+│   ├── src/                      # React source code
+│   │   ├── App.js                # Main application component
+│   │   ├── index.js              # Entry point
+│   │   ├── theme.js              # Material UI theme
+│   │   ├── components/           # Reusable components
+│   │   │   ├── NavBar.js         # Navigation bar
+│   │   │   └── PrivateRoute.js   # Authentication route wrapper
+│   │   ├── contexts/             # Context API providers
+│   │   │   └── AuthContext.js    # Authentication context
+│   │   └── pages/                # App pages
+│   │       ├── Login.js          # Login page
+│   │       ├── Register.js       # Registration page
+│   │       ├── Dashboard.js      # Main dashboard
+│   │       ├── EEGUpload.js      # EEG upload page
+│   │       ├── EEGDetail.js      # EEG detail view
+│   │       ├── ADHDAnalysis.js   # ADHD analysis page
+│   │       └── Profile.js        # User profile page
+│   └── nginx/                    # Nginx configuration
+│       └── nginx.conf            # Nginx config for React routing
+│
+└── eeg-processor/                # Python EEG processing service
+    ├── Dockerfile                # EEG processor Docker configuration
+    ├── requirements.txt          # Python dependencies
+    ├── processor.py              # Main processor script
+    ├── models/                   # ML model files
+    │   └── adhd_svm_model.pkl    # Trained SVM model for ADHD
+    ├── utils/                    # Utility functions
+    │   ├── eeg_loader.py         # EEG file format loader
+    │   ├── feature_extraction.py # Feature extraction from EEG
+    │   └── preprocessing.py      # EEG signal preprocessing
+    └── data/                     # Shared volume with backend for EEG data

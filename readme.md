@@ -1,25 +1,21 @@
-# EEG BIDS Database with MongoDB
+# EEGility
 
-A containerized web application for managing EEG data following the BIDS (Brain Imaging Data Structure) format, with support for ADHD analysis using SVM.
+**A BIDS-compatible EEG data management and analysis platform with ADHD detection capabilities.**
+
+Developed by Vincent Hartline
 
 ## Overview
 
-This project provides a complete solution for uploading, storing, and analyzing EEG data in various formats compatible with the BIDS specification. The system includes:
+EEGility is a comprehensive, containerized web application for managing, storing, and analyzing EEG data following the Brain Imaging Data Structure (BIDS) format. This platform provides seamless integration between data storage, metadata management, and advanced analysis features for neuroscientific research.
 
-- MongoDB database for efficient storage of EEG data and metadata
-- RESTful API for data management
-- Web-based frontend with authentication
-- Support for uploading various EEG file formats
-- Machine learning algorithms for ADHD detection
+## Key Features
 
-## Features
-
-- **User Authentication**: Secure login system with JWT
+- **User Authentication**: Secure login system with JWT authentication
 - **EEG Data Management**: Upload, download, and browse EEG recordings
-- **BIDS Compatibility**: Support for BIDS-compatible EEG data formats
-- **Containerized Deployment**: Easy deployment with Docker
-- **ADHD Analysis**: SVM-based classification for ADHD detection
-- **Responsive UI**: Modern web interface built with React and Material-UI
+- **Metadata Storage**: Comprehensive metadata tracking with BIDS compatibility
+- **ADHD Analysis**: Support Vector Machine (SVM) based classification for ADHD detection
+- **Containerized Deployment**: Easy deployment with Docker and Docker Compose
+- **Modern UI**: User-friendly interface built with React and Material-UI
 
 ## Supported EEG Formats
 
@@ -28,19 +24,20 @@ This project provides a complete solution for uploading, storing, and analyzing 
 - BrainVision format (VHDR/VMRK/EEG)
 - EEGLab format (SET)
 - FIFF format (FIF)
-- And more...
+- Neuroscan (CNT)
+- NumPy arrays (NPY)
 
 ## System Architecture
 
-The system is built with a microservices architecture using:
+EEGility follows a microservices architecture:
 
-- **MongoDB**: Database for EEG data storage
-- **Node.js/Express**: Backend API service
+- **MongoDB**: NoSQL database for flexible EEG data storage
+- **Node.js/Express**: Backend REST API service
 - **React**: Frontend user interface
-- **Python/MNE**: EEG processing and analysis
+- **Python/MNE**: EEG processing and analysis service
 - **Docker**: Containerization and orchestration
 
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
@@ -51,88 +48,160 @@ The system is built with a microservices architecture using:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/eeg-bids-mongodb.git
-   cd eeg-bids-mongodb
+   git clone https://github.com/vinny424/eegility.git
+   cd eegility
    ```
 
-2. Configure the environment variables:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your preferred settings
-   ```
-
-3. Start the containers:
+2. Start the containerized application:
    ```bash
    docker-compose up -d
    ```
 
-4. Access the application:
+3. Access the application in your browser:
    ```
-   http://localhost
+   http://localhost:8080
    ```
 
-## Usage
+4. Login with default credentials:
+   - Username: `user@example.com`
+   - Password: `user123`
+
+## Development Setup
+
+If you want to contribute or run the application in development mode:
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/vinny424/eegility.git
+   cd eegility
+   ```
+
+2. Install backend dependencies:
+   ```bash
+   cd backend
+   npm install
+   ```
+
+3. Install frontend dependencies:
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+4. Start MongoDB and the EEG processor:
+   ```bash
+   docker-compose up -d mongodb eeg-processor
+   ```
+
+5. Start the backend:
+   ```bash
+   cd backend
+   npm run dev
+   ```
+
+6. Start the frontend:
+   ```bash
+   cd frontend
+   npm start
+   ```
+
+## Usage Guide
 
 ### Uploading EEG Data
 
 1. Log in to the application
-2. Navigate to the Upload page
-3. Select an EEG file and provide subject information
-4. Click "Upload" to process and store the data
+2. Navigate to the "Upload" page
+3. Drag & drop or select an EEG file
+4. Fill in subject information and metadata
+5. Click "Upload" to process and store the data
 
 ### Running ADHD Analysis
 
-1. Navigate to the Dashboard
-2. Find the EEG recording you want to analyze
-3. Click on the "Run SVM Analysis" button
-4. View the results and visualizations
+1. Find the EEG recording you want to analyze in the Dashboard
+2. Click on the "Analysis" icon
+3. Review the file details and click "Run ADHD Analysis"
+4. View the analysis results including:
+   - ADHD classification (ADHD vs. non-ADHD)
+   - Classification confidence
+   - Key EEG features (theta/beta ratio, etc.)
+   - Visualization of results
 
-## Development
+### Managing User Profile
 
-### Project Structure
+1. Click on your profile icon in the top-right corner
+2. Select "Profile" to view and update your information
+3. Update your personal details or change your password
+
+## Project Structure
 
 ```
-eeg-bids-mongodb/
-├── backend/                # Node.js Express backend
-├── frontend/               # React frontend
-└── eeg-processor/          # Python EEG processing service
+eegility/
+├── .env                          # Environment variables
+├── docker-compose.yml            # Docker Compose configuration
+├── mongo-init.js                 # MongoDB initialization script
+│
+├── backend/                      # Node.js Express backend
+│   ├── middleware/               # Express middleware
+│   ├── models/                   # MongoDB schema models
+│   ├── routes/                   # API route handlers
+│   └── services/                 # Business logic services
+│
+├── frontend/                     # React frontend
+│   ├── src/                      # React source code
+│   │   ├── components/           # Reusable components
+│   │   ├── contexts/             # Context API providers
+│   │   └── pages/                # App pages
+│   └── nginx/                    # Nginx configuration
+│
+└── eeg-processor/                # Python EEG processing service
+    ├── models/                   # ML model files
+    └── utils/                    # Utility functions
 ```
 
-### Running in Development Mode
+## Troubleshooting
 
-For development, you can run services individually:
+### Common Issues
+
+#### Missing Node Modules
+If you encounter errors related to missing modules like `multer`:
+
+```
+Error: Cannot find module 'multer'
+```
+
+Fix by rebuilding the Docker containers:
 
 ```bash
-# Backend development
-cd backend
-npm install
-npm run dev
-
-# Frontend development
-cd frontend
-npm install
-npm start
-
-# EEG processor development
-cd eeg-processor
-pip install -r requirements.txt
-python processor.py
+docker-compose down
+docker-compose build --no-cache
+docker-compose up
 ```
 
-## Contributing
+#### Port Conflicts
+EEGility uses the following ports:
+- MongoDB: 27018
+- Backend API: 5002
+- Frontend: 8080
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit your changes: `git commit -m 'Add your feature'`
-4. Push to the branch: `git push origin feature/your-feature`
-5. Submit a pull request
+If you have conflicts, modify the port mappings in `docker-compose.yml`.
+
+## Tech Stack
+
+- **Backend**: Node.js, Express.js, MongoDB, Mongoose
+- **Frontend**: React, Material-UI, Chart.js
+- **Analysis**: Python, MNE, scikit-learn
+- **DevOps**: Docker, Docker Compose, Nginx
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## Author
+
+Created by Vincent Hartline
+
 ## Acknowledgments
 
 - The BIDS community for standardizing neuroimaging data formats
-- MNE-Python for EEG processing capabilities
-- MongoDB for the flexible document database
+- MNE-Python for excellent EEG processing capabilities 
+- MongoDB for flexible document database system

@@ -1,0 +1,45 @@
+
+
+services:
+  database:
+    image: mongo:6.0
+    container_name: eegility-db
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: eegility
+    volumes:
+      - mongodb_data:/data/db 
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ ping: 1 })", "-u", "root", "-p", "example", "--quiet"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 40s
+
+  node:
+    build:
+      context: .  
+      dockerfile: Dockerfile  
+    container_name: eegility-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./public:/app/public
+      - ./uploads:/app/uploads
+    environment:
+      MONGODB_URI: "mongodb://root:example@database:27017/eegility?authSource=admin"
+      DB_NAME: "eegility"
+      NODE_ENV: "production"
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+    command: >
+      sh -c "sleep 5 &&  # Wait briefly for MongoDB to be fully ready
+             node server.js"
+
+volumes:
+  mongodb_data:

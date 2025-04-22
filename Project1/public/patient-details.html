@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Details</title>
+    <link rel="stylesheet" href="eegility.css">
+</head>
+<body>
+    <header>
+        <img src="eegility-logo.png" alt="EEGility Logo" class="logo">
+        <h1>Patient Details</h1>
+    </header>
+    
+    <div class="container">
+        <div id="patient-details-section" class="form-section">
+            <h2>Patient Information</h2>
+            <div id="patient-info"></div>
+            
+            <h3>Associated Files</h3>
+            <div id="patient-files">
+                <table class="file-table">
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>File Type</th>
+                            <th>Upload Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="files-list">
+                        <!-- Files will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="action-buttons">
+                <button onclick="window.close()">Close</button>
+                <button onclick="printDetails()">Print</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="eegility.js"></script>
+    <script>
+        // Load patient details when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPatientDetails();
+        });
+        
+        function printDetails() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,700 @@
+current code to add to eegility
+// Create a MongoDB function for EEG file uploads
+db.system.js.insertOne({
+    _id: "uploadEEGRecord",
+    value: function(patientId, recordData, fileData, userId) {
+      // 1. First validate if the user has admin privileges
+      const user = db.users.findOne({ _id: userId });
+      if (!user || user.role !== "admin") {
+        return { status: "error", message: "Unauthorized: Admin privileges required" };
+      }
+     
+      // 2. Validate patient exists
+      const patient = db.patients.findOne({ patientId: patientId });
+      if (!patient) {
+        return { status: "error", message: "Patient not found" };
+      }
+     
+      // 3. Store the file in GridFS (
+      const fileId = new ObjectId();
+      // 4. Create the EEG record
+      const eegRecord = {
+        patientId: patientId,
+        recordDate: new Date(recordData.recordDate || new Date()),
+        fileId: fileId,
+        fileName: recordData.fileName,
+        fileFormat: recordData.fileFormat,
+        fileSize: recordData.fileSize,
+        recordingDuration: recordData.recordingDuration,
+        channelCount: recordData.channelCount,
+        samplingRate: recordData.samplingRate,
+        equipmentType: recordData.equipmentType,
+        technician: recordData.technician,
+        status: "new",
+        tags: recordData.tags || [],
+        notes: recordData.notes || "",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdBy: userId
+      };
+     
+      // 5. Insert the record
+      const result = db.eegRecords.insertOne(eegRecord);
+     
+      // 6. Create audit log entry
+      db.auditLog.insertOne({
+        userId: userId,
+        username: user.username,
+        action: "create",
+        resourceType: "eegRecord",
+        resourceId: result.insertedId.toString(),
+        details: `Created EEG record for patient ${patientId}`,
+        timestamp: new Date(),
+        ipAddress: recordData.ipAddress || "unknown",
+        userAgent: recordData.userAgent || "unknown"
+      });
+     
+      return {
+        status: "success",
+        message: "EEG record created successfully",
+        recordId: result.insertedId
+      };
+    }
+
+
+
+    // Monitor new uploads to automatically update related collections
+const changeStream = db.eegRecords.watch();
+changeStream.on('change', async (change) => {
+  if (change.operationType === 'insert') {
+    // Update patient's lastEEGRecordDate when a new EEG is uploaded
+    await db.patients.updateOne(
+      { patientId: change.fullDocument.patientId },
+      { $set: { lastEEGRecordDate: new Date() } }
+    );
+   
+    // Create an audit log entry automatically
+    await db.auditLog.insertOne({
+      userId: change.fullDocument.createdBy,
+      username: (await db.users.findOne({ _id: change.fullDocument.createdBy })).username,
+      action: "upload",
+      resourceType: "eegRecord",
+      resourceId: change.fullDocument._id.toString(),
+      details: `EEG record uploaded for patient ${change.fullDocument.patientId}`,
+      timestamp: new Date(),
+      ipAddress: "captured-from-request", // You'd capture this from the request
+      userAgent: "captured-from-request"  // You'd capture this from the request
+    });
+  }
+
+
+
+
+// Create a MongoDB function for EEG file downloads
+db.system.js.insertOne({
+    _id: "downloadEEGRecord",
+    value: function(fileId, userId, downloadInfo) {
+      // 1. Validate the user exists
+      const user = db.users.findOne({ _id: userId });
+      if (!user) {
+        return { status: "error", message: "User not found" };
+      }
+     
+      // 2. Validate the file exists
+      const eegRecord = db.eegRecords.findOne({ fileId: fileId });
+      if (!eegRecord) {
+        return { status: "error", message: "EEG record not found" };
+      }
+     
+      // 3. Log the download
+      db.downloadHistory.insertOne({
+        userId: userId,
+        username: user.username,
+        fileId: fileId,
+        fileName: eegRecord.fileName,
+        patientId: eegRecord.patientId,
+        downloadDate: new Date(),
+        ipAddress: downloadInfo.ipAddress || "unknown",
+        userAgent: downloadInfo.userAgent || "unknown",
+        downloadReason: downloadInfo.reason || ""
+      });
+     
+      // 4. Update user's lastDownload timestamp
+      db.users.updateOne(
+        { _id: userId },
+        { $set: { lastDownload: new Date() } }
+      );
+     
+      // 5. Create audit log entry
+      db.auditLog.insertOne({
+        userId: userId,
+        username: user.username,
+        action: "download",
+        resourceType: "eegRecord",
+        resourceId: eegRecord._id.toString(),
+        details: `Downloaded EEG record for patient ${eegRecord.patientId}`,
+        timestamp: new Date(),
+        ipAddress: downloadInfo.ipAddress || "unknown",
+        userAgent: downloadInfo.userAgent || "unknown"
+      });
+     
+      return {
+        status: "success",
+        message: "Download logged successfully"
+      };
+
+
+
+
+
+});
+  });
+ 
+ 
+  // Users Collection with enhanced RBAC
+db.createCollection("users", {
+    validator: {
+      $jsonSchema: {
+        bsonType: "object",
+        required: ["username", "email", "password", "roles", "status", "createdAt"],
+        properties: {
+          username: {
+            bsonType: "string",
+            description: "Username for login - required and unique"
+          },
+          email: {
+            bsonType: "string",
+            pattern: "^.+@.+$",
+            description: "Email address - required and must be valid format"
+          },
+          password: {
+            bsonType: "string",
+            description: "Hashed password - required"
+          },
+          firstName: {
+            bsonType: "string",
+            description: "User's first name"
+          },
+          lastName: {
+            bsonType: "string",
+            description: "User's last name"
+          },
+          roles: {
+            bsonType: "array",
+            description: "Array of roles assigned to the user - required",
+            minItems: 1,
+            items: {
+              enum: ["admin", "user"]
+            }
+          },
+          permissions: {
+            bsonType: "object",
+            description: "Fine-grained permissions for the user",
+            properties: {
+              patients: {
+                bsonType: "object",
+                properties: {
+                  create: { bsonType: "bool" },
+                  read: { bsonType: "bool" },
+                  update: { bsonType: "bool" },
+                  delete: { bsonType: "bool" }
+                }
+              },
+              eegRecords: {
+                bsonType: "object",
+                properties: {
+                  upload: { bsonType: "bool" },
+                  download: { bsonType: "bool" },
+                  update: { bsonType: "bool" },
+                  delete: { bsonType: "bool" }
+                }
+              },
+              users: {
+                bsonType: "object",
+                properties: {
+                  create: { bsonType: "bool" },
+                  read: { bsonType: "bool" },
+                  update: { bsonType: "bool" },
+                  delete: { bsonType: "bool" }
+                }
+              },
+              reports: {
+                bsonType: "object",
+                properties: {
+                  generate: { bsonType: "bool" },
+                  export: { bsonType: "bool" }
+                }
+              }
+            }
+          },
+          status: {
+            enum: ["active", "inactive", "suspended", "pending"],
+            description: "Current account status"
+          },
+          phoneNumber: {
+            bsonType: "string",
+            description: "Contact phone number"
+          },
+          department: {
+            bsonType: "string",
+            description: "Department or unit the user belongs to"
+          },
+          title: {
+            bsonType: "string",
+            description: "Professional title of the user"
+          },
+          createdAt: {
+            bsonType: "date",
+            description: "Account creation timestamp - required"
+          },
+          lastLogin: {
+            bsonType: "date",
+            description: "Last login timestamp"
+          },
+          lastPasswordChange: {
+            bsonType: "date",
+            description: "Last password change timestamp"
+          },
+          lastDownload: {
+            bsonType: "date",
+            description: "Last file download timestamp"
+          },
+          failedLoginAttempts: {
+            bsonType: "int",
+            description: "Count of consecutive failed login attempts"
+          },
+          createdBy: {
+            bsonType: "objectId",
+            description: "Reference to admin user who created this account"
+          },
+          profilePicture: {
+            bsonType: "string",
+            description: "Path to user's profile picture"
+          },
+          preferences: {
+            bsonType: "object",
+            description: "User interface preferences",
+            properties: {
+              theme: { bsonType: "string" },
+              notificationsEnabled: { bsonType: "bool" },
+              defaultView: { bsonType: "string" }
+            }
+          },
+          apiKey: {
+            bsonType: "string",
+            description: "API key for programmatic access (if applicable)"
+          },
+          mfaEnabled: {
+            bsonType: "bool",
+            description: "Whether multi-factor authentication is enabled"
+          },
+          mfaSecret: {
+            bsonType: "string",
+            description: "Secret key for MFA (encrypted)"
+          }
+        }
+      }
+    }
+  });
+ 
+  // Create necessary indexes
+  db.users.createIndex({ "username": 1 }, { unique: true });
+  db.users.createIndex({ "email": 1 }, { unique: true });
+  db.users.createIndex({ "roles": 1 });
+  db.users.createIndex({ "status": 1 });
+  db.users.createIndex({ "department": 1 });
+ 
+  // Create roles collection to manage role definitions
+  db.createCollection("roles", {
+    validator: {
+      $jsonSchema: {
+        bsonType: "object",
+        required: ["name", "description", "permissions"],
+        properties: {
+          name: {
+            bsonType: "string",
+            description: "Role name - required"
+          },
+          description: {
+            bsonType: "string",
+            description: "Role description"
+          },
+          permissions: {
+            bsonType: "object",
+            description: "Default permissions for this role",
+            required: ["patients", "eegRecords", "users", "reports"],
+            properties: {
+              patients: {
+                bsonType: "object",
+                required: ["create", "read", "update", "delete"],
+                properties: {
+                  create: { bsonType: "bool" },
+                  read: { bsonType: "bool" },
+                  update: { bsonType: "bool" },
+                  delete: { bsonType: "bool" }
+                }
+              },
+              eegRecords: {
+                bsonType: "object",
+                required: ["upload", "download", "update", "delete"],
+                properties: {
+                  upload: { bsonType: "bool" },
+                  download: { bsonType: "bool" },
+                  update: { bsonType: "bool" },
+                  delete: { bsonType: "bool" }
+                }
+              },
+              users: {
+                bsonType: "object",
+                required: ["create", "read", "update", "delete"],
+                properties: {
+                  create: { bsonType: "bool" },
+                  read: { bsonType: "bool" },
+                  update: { bsonType: "bool" },
+                  delete: { bsonType: "bool" }
+                }
+              },
+              reports: {
+                bsonType: "object",
+                required: ["generate", "export"],
+                properties: {
+                  generate: { bsonType: "bool" },
+                  export: { bsonType: "bool" }
+                }
+              }
+            }
+          },
+          createdAt: {
+            bsonType: "date",
+            description: "Role creation timestamp"
+          },
+          updatedAt: {
+            bsonType: "date",
+            description: "Role last update timestamp"
+          },
+          createdBy: {
+            bsonType: "objectId",
+            description: "Admin who created this role"
+          }
+        }
+      }
+    }
+  });
+ 
+  db.roles.createIndex({ "name": 1 }, { unique: true });
+ 
+  // Insert default roles
+  db.roles.insertMany([
+    {
+      name: "admin",
+      description: "System administrator with full access to all features",
+      permissions: {
+        patients: {
+          create: true,
+          read: true,
+          update: true,
+          delete: true
+        },
+        eegRecords: {
+          upload: true,
+          download: true,
+          update: true,
+          delete: true
+        },
+        users: {
+          create: true,
+          read: true,
+          update: true,
+          delete: true
+        },
+        reports: {
+          generate: true,
+          export: true
+        }
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      name: "user",
+      description: "Regular user with view and download access only",
+      permissions: {
+        patients: {
+          create: false,
+          read: true,
+          update: false,
+          delete: false
+        },
+        eegRecords: {
+          upload: false,
+          download: true,
+          update: false,
+          delete: false
+        },
+        users: {
+          create: false,
+          read: false,
+          update: false,
+          delete: false
+        },
+        reports: {
+          generate: true,
+          export: false
+        }
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ]);
+ 
+  // Insert sample users
+  // System administrator account
+  db.users.insertOne({
+    username: "admin",
+    email: "admin@example.com",
+    password: "$2a$10$X7VYCcQkwA9Vt8evR2kK5eWUL9P7IRZm0rO5LpCDVAI5DwQkG6a5K", // hashed password
+    firstName: "System",
+    lastName: "Administrator",
+    roles: ["admin"],
+    permissions: {
+      patients: {
+        create: true,
+        read: true,
+        update: true,
+        delete: true
+      },
+      eegRecords: {
+        upload: true,
+        download: true,
+        update: true,
+        delete: true
+      },
+      users: {
+        create: true,
+        read: true,
+        update: true,
+        delete: true
+      },
+      reports: {
+        generate: true,
+        export: true
+      }
+    },
+    status: "active",
+    department: "IT",
+    title: "System Administrator",
+    phoneNumber: "555-123-4567",
+    createdAt: new Date(),
+    lastLogin: new Date(),
+    lastPasswordChange: new Date(),
+    failedLoginAttempts: 0,
+    preferences: {
+      theme: "light",
+      notificationsEnabled: true,
+      defaultView: "dashboard"
+    },
+    mfaEnabled: true
+  });
+ 
+  // Regular user account
+  db.users.insertOne({
+    username: "jsmith",
+    email: "john.smith@example.com",
+    password: "$2a$10$X7VYCcQkwA9Vt8evR2kK5eWUL9P7IRZm0rO5LpCDVAI5DwQkG6a5K", // hashed password
+    firstName: "John",
+    lastName: "Smith",
+    roles: ["user"],
+    permissions: {
+      patients: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false
+      },
+      eegRecords: {
+        upload: false,
+        download: true,
+        update: false,
+        delete: false
+      },
+      users: {
+        create: false,
+        read: false,
+        update: false,
+        delete: false
+      },
+      reports: {
+        generate: true,
+        export: false
+      }
+    },
+    status: "active",
+    department: "Neurology",
+    title: "Research Assistant",
+    phoneNumber: "555-987-6543",
+    createdAt: new Date(),
+    lastLogin: new Date(),
+    lastPasswordChange: new Date(),
+    failedLoginAttempts: 0,
+    createdBy: db.users.findOne({ username: "admin" })._id,
+    preferences: {
+      theme: "dark",
+      notificationsEnabled: true,
+      defaultView: "patients"
+    },
+    mfaEnabled: false
+  });
+ 
+  // Create a function to check user permissions
+  db.system.js.insertOne({
+    _id: "checkUserPermission",
+    value: function(userId, resourceType, action) {
+      const user = db.users.findOne({ _id: userId, status: "active" });
+      if (!user) {
+        return { hasPermission: false, message: "User not found or inactive" };
+      }
+     
+      // Check if user has the required permission
+      if (user.permissions &&
+          user.permissions[resourceType] &&
+          user.permissions[resourceType][action] === true) {
+        return { hasPermission: true };
+      }
+     
+      return {
+        hasPermission: false,
+        message: `User lacks permission for ${action} on ${resourceType}`
+      };
+    }
+  });
+ 
+  // Create a function to assign a role to a user
+  db.system.js.insertOne({
+    _id: "assignRoleToUser",
+    value: function(userId, roleName, adminId) {
+      // Check if admin has permission
+      const adminCheck = checkUserPermission(adminId, "users", "update");
+      if (!adminCheck.hasPermission) {
+        return { status: "error", message: adminCheck.message };
+      }
+     
+      // Get the role definition
+      const role = db.roles.findOne({ name: roleName });
+      if (!role) {
+        return { status: "error", message: "Role not found" };
+      }
+     
+      // Update the user
+      const updateResult = db.users.updateOne(
+        { _id: userId },
+        {
+          $addToSet: { roles: roleName },
+          $set: {
+            permissions: role.permissions,
+            updatedAt: new Date(),
+            lastUpdatedBy: adminId
+          }
+        }
+      );
+     
+      if (updateResult.modifiedCount === 1) {
+        // Log the role assignment
+        db.auditLog.insertOne({
+          userId: adminId,
+          username: db.users.findOne({ _id: adminId }).username,
+          action: "assign_role",
+          resourceType: "user",
+          resourceId: userId.toString(),
+          details: `Assigned role '${roleName}' to user`,
+          timestamp: new Date(),
+          ipAddress: "system",
+          userAgent: "system"
+        });
+       
+        return { status: "success", message: `Role '${roleName}' assigned successfully` };
+      } else {
+        return { status: "error", message: "User not found or role already assigned" };
+      }
+    }
+  });
+ 
+  // Create a function to authenticate a user
+  db.system.js.insertOne({
+    _id: "authenticateUser",
+    value: function(username, passwordHash) {
+      // In a real application, you would verify the password hash here
+      const user = db.users.findOne({
+        username: username,
+        status: "active"
+      });
+     
+      if (!user) {
+        return { authenticated: false, message: "User not found or inactive" };
+      }
+     
+      // Simulating password check (in a real app, you'd compare hashes)
+      const passwordCorrect = (user.password === passwordHash);
+     
+      if (passwordCorrect) {
+        // Update login information
+        db.users.updateOne(
+          { _id: user._id },
+          {
+            $set: {
+              lastLogin: new Date(),
+              failedLoginAttempts: 0
+            }
+          }
+        );
+       
+        // Log successful login
+        db.auditLog.insertOne({
+          userId: user._id,
+          username: user.username,
+          action: "login",
+          resourceType: "auth",
+          details: "Successful login",
+          timestamp: new Date(),
+          ipAddress: "captured-from-request", // You'd capture this from the request
+          userAgent: "captured-from-request"  // You'd capture this from the request
+        });
+       
+        return {
+          authenticated: true,
+          userId: user._id,
+          username: user.username,
+          roles: user.roles,
+          permissions: user.permissions
+        };
+      } else {
+        // Increment failed login attempts
+        db.users.updateOne(
+          { _id: user._id },
+          { $inc: { failedLoginAttempts: 1 } }
+        );
+       
+        // Check if account should be locked
+        const updatedUser = db.users.findOne({ _id: user._id });
+        if (updatedUser.failedLoginAttempts >= 5) {
+          db.users.updateOne(
+            { _id: user._id },
+            { $set: { status: "suspended" } }
+          );
+         
+          // Log account suspension
+          db.auditLog.insertOne({
+            userId: user._id,
+            username: user.username,
+            action: "suspend_account",
+            resourceType: "auth",
+            details: "Account suspended due to multiple failed login attempts",
+            timestamp: new Date(),
+            ipAddress: "captured-from-request",
+            userAgent: "captured-from-request"
+          });
+        }
+       
+        return { authenticated: false, message: "Invalid credentials" };
+      }
+    }
+  });

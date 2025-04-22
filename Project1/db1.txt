@@ -1,0 +1,485 @@
+// Users Collection
+db.createCollection("users", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["username", "email", "password", "role", "createdAt"],
+      properties: {
+        username: {
+          bsonType: "string",
+          description: "Username for login - required"
+        },
+        email: {
+          bsonType: "string",
+          pattern: "^.+@.+$",
+          description: "Email address - required and must be valid format"
+        },
+        password: {
+          bsonType: "string",
+          description: "Hashed password - required"
+        },
+        firstName: {
+          bsonType: "string",
+          description: "User's first name"
+        },
+        lastName: {
+          bsonType: "string",
+          description: "User's last name"
+        },
+        role: {
+          enum: ["admin", "user"],
+          description: "User role - required (admin can add/edit, user can only view/download)"
+        },
+        phoneNumber: {
+          bsonType: "string",
+          description: "Contact phone number"
+        },
+        createdAt: {
+          bsonType: "date",
+          description: "Account creation timestamp - required"
+        },
+        lastLogin: {
+          bsonType: "date",
+          description: "Last login timestamp"
+        },
+        lastDownload: {
+          bsonType: "date",
+          description: "Last file download timestamp"
+        },
+        createdBy: {
+          bsonType: "objectId",
+          description: "Reference to admin user who created this account"
+        }
+      }
+    }
+  }
+});
+
+// Patients Collection
+db.createCollection("patients", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["patientId", "dateOfBirth", "createdAt", "createdBy"],
+      properties: {
+        patientId: {
+          bsonType: "string",
+          description: "Unique patient identifier - required"
+        },
+        dateOfBirth: {
+          bsonType: "date",
+          description: "Patient's date of birth - required"
+        },
+        firstName: {
+          bsonType: "string",
+          description: "Patient's first name"
+        },
+        lastName: {
+          bsonType: "string",
+          description: "Patient's last name"
+        },
+        gender: {
+          enum: ["male", "female", "other", "prefer not to say"],
+          description: "Patient's gender"
+        },
+        bloodType: {
+          enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "unknown"],
+          description: "Patient's blood type"
+        },
+        height: {
+          bsonType: "number",
+          description: "Height in cm"
+        },
+        weight: {
+          bsonType: "number",
+          description: "Weight in kg"
+        },
+        allergies: {
+          bsonType: "array",
+          description: "List of patient allergies",
+          items: {
+            bsonType: "string"
+          }
+        },
+        medicalConditions: {
+          bsonType: "array",
+          description: "List of existing medical conditions",
+          items: {
+            bsonType: "string"
+          }
+        },
+        medications: {
+          bsonType: "array",
+          description: "Current medications",
+          items: {
+            bsonType: "object",
+            properties: {
+              name: { bsonType: "string" },
+              dosage: { bsonType: "string" },
+              frequency: { bsonType: "string" }
+            }
+          }
+        },
+        emergencyContact: {
+          bsonType: "object",
+          properties: {
+            name: { bsonType: "string" },
+            relationship: { bsonType: "string" },
+            phoneNumber: { bsonType: "string" }
+          }
+        },
+        createdAt: {
+          bsonType: "date",
+          description: "Record creation timestamp - required"
+        },
+        updatedAt: {
+          bsonType: "date",
+          description: "Record last update timestamp"
+        },
+        createdBy: {
+          bsonType: "objectId",
+          description: "Reference to admin user who created this patient - required"
+        },
+        lastUpdatedBy: {
+          bsonType: "objectId",
+          description: "Reference to admin user who last updated this patient"
+        }
+      }
+    }
+  }
+});
+
+// EEG Records Collection
+db.createCollection("eegRecords", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["patientId", "recordDate", "fileId", "status", "createdBy"],
+      properties: {
+        patientId: {
+          bsonType: "string",
+          description: "Reference to patient identifier - required"
+        },
+        recordDate: {
+          bsonType: "date",
+          description: "Date and time of EEG recording - required"
+        },
+        fileId: {
+          bsonType: "objectId",
+          description: "Reference to GridFS file - required"
+        },
+        fileName: {
+          bsonType: "string",
+          description: "Original filename of the EEG record"
+        },
+        fileFormat: {
+          bsonType: "string",
+          description: "Format of the EEG file (EDF, BDF, etc.)"
+        },
+        fileSize: {
+          bsonType: "number",
+          description: "Size of file in bytes"
+        },
+        recordingDuration: {
+          bsonType: "number",
+          description: "Duration of recording in seconds"
+        },
+        channelCount: {
+          bsonType: "number",
+          description: "Number of EEG channels"
+        },
+        samplingRate: {
+          bsonType: "number",
+          description: "Sampling rate in Hz"
+        },
+        equipmentType: {
+          bsonType: "string",
+          description: "Type of EEG recording equipment used"
+        },
+        technician: {
+          bsonType: "string",
+          description: "Name of technician who performed the recording"
+        },
+        clinicalFindings: {
+          bsonType: "string",
+          description: "Summary of clinical findings"
+        },
+        status: {
+          enum: ["new", "reviewed", "archived"],
+          description: "Current status of the EEG record - required"
+        },
+        tags: {
+          bsonType: "array",
+          description: "Classification tags for the recording",
+          items: {
+            bsonType: "string"
+          }
+        },
+        abnormalWaveforms: {
+          bsonType: "array",
+          description: "Array of abnormal waveforms detected",
+          items: {
+            bsonType: "object",
+            properties: {
+              type: { bsonType: "string" },
+              location: { bsonType: "string" },
+              frequency: { bsonType: "number" },
+              amplitude: { bsonType: "number" },
+              timestamp: { bsonType: "number" }
+            }
+          }
+        },
+        notes: {
+          bsonType: "string",
+          description: "Additional notes about the EEG recording"
+        },
+        createdAt: {
+          bsonType: "date",
+          description: "Record creation timestamp"
+        },
+        updatedAt: {
+          bsonType: "date",
+          description: "Record last update timestamp"
+        },
+        createdBy: {
+          bsonType: "objectId",
+          description: "Reference to admin user who uploaded this EEG - required"
+        },
+        lastUpdatedBy: {
+          bsonType: "objectId",
+          description: "Reference to admin user who last updated this record"
+        }
+      }
+    }
+  }
+});
+
+// Download History Collection
+db.createCollection("downloadHistory", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["userId", "fileId", "downloadDate", "ipAddress"],
+      properties: {
+        userId: {
+          bsonType: "objectId",
+          description: "User who downloaded the file"
+        },
+        username: {
+          bsonType: "string",
+          description: "Username of the user who downloaded the file"
+        },
+        fileId: {
+          bsonType: "objectId",
+          description: "ID of the downloaded EEG file"
+        },
+        fileName: {
+          bsonType: "string",
+          description: "Name of the downloaded file"
+        },
+        patientId: {
+          bsonType: "string",
+          description: "ID of the patient associated with the EEG"
+        },
+        downloadDate: {
+          bsonType: "date",
+          description: "When the download occurred"
+        },
+        ipAddress: {
+          bsonType: "string",
+          description: "IP address where download originated"
+        },
+        userAgent: {
+          bsonType: "string",
+          description: "Browser/application info"
+        },
+        downloadReason: {
+          bsonType: "string",
+          description: "User-provided reason for download (for audit purposes)"
+        }
+      }
+    }
+  }
+});
+
+// Audit Log Collection
+db.createCollection("auditLog", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["userId", "action", "timestamp", "ipAddress"],
+      properties: {
+        userId: {
+          bsonType: "objectId",
+          description: "User who performed the action"
+        },
+        username: {
+          bsonType: "string",
+          description: "Username of the user who performed the action"
+        },
+        action: {
+          bsonType: "string",
+          description: "Action performed (create, read, update, delete)"
+        },
+        resourceType: {
+          bsonType: "string",
+          description: "Type of resource affected (patient, eegRecord, user)"
+        },
+        resourceId: {
+          bsonType: "string",
+          description: "ID of the affected resource"
+        },
+        details: {
+          bsonType: "string",
+          description: "Additional details about the action"
+        },
+        timestamp: {
+          bsonType: "date",
+          description: "When the action occurred"
+        },
+        ipAddress: {
+          bsonType: "string",
+          description: "IP address where action originated"
+        },
+        userAgent: {
+          bsonType: "string",
+          description: "Browser/application info"
+        }
+      }
+    }
+  }
+});
+
+// Set up GridFS buckets for storing EEG files
+db.createCollection("eegFiles.files");
+db.createCollection("eegFiles.chunks");
+
+// Create indexes
+db.users.createIndex({ "username": 1 }, { unique: true });
+db.users.createIndex({ "email": 1 }, { unique: true });
+db.users.createIndex({ "role": 1 });
+
+db.patients.createIndex({ "patientId": 1 }, { unique: true });
+db.patients.createIndex({ "lastName": 1, "firstName": 1 });
+db.patients.createIndex({ "createdBy": 1 });
+
+db.eegRecords.createIndex({ "patientId": 1 });
+db.eegRecords.createIndex({ "fileId": 1 }, { unique: true });
+db.eegRecords.createIndex({ "recordDate": -1 });
+db.eegRecords.createIndex({ "createdBy": 1 });
+db.eegRecords.createIndex({ "status": 1 });
+
+db.downloadHistory.createIndex({ "userId": 1 });
+db.downloadHistory.createIndex({ "fileId": 1 });
+db.downloadHistory.createIndex({ "patientId": 1 });
+db.downloadHistory.createIndex({ "downloadDate": -1 });
+
+db.auditLog.createIndex({ "userId": 1 });
+db.auditLog.createIndex({ "timestamp": -1 });
+db.auditLog.createIndex({ "resourceType": 1, "resourceId": 1 });
+
+// Example of inserting a sample admin user
+db.users.insertOne({
+  username: "admin",
+  email: "admin@example.com",
+  password: "$2a$10$X7VYCcQkwA9Vt8evR2kK5eWUL9P7IRZm0rO5LpCDVAI5DwQkG6a5K", // hashed password
+  firstName: "System",
+  lastName: "Administrator",
+  role: "admin",
+  phoneNumber: "555-123-4567",
+  createdAt: new Date(),
+  lastLogin: new Date()
+});
+
+// Example of inserting a sample regular user
+db.users.insertOne({
+  username: "jsmith",
+  email: "john.smith@example.com",
+  password: "$2a$10$X7VYCcQkwA9Vt8evR2kK5eWUL9P7IRZm0rO5LpCDVAI5DwQkG6a5K", // hashed password
+  firstName: "John",
+  lastName: "Smith",
+  role: "user",
+  phoneNumber: "555-987-6543",
+  createdAt: new Date(),
+  lastLogin: new Date(),
+  createdBy: db.users.findOne({ username: "admin" })._id
+});
+
+.. Get the admin users ID
+const adminId = db.users.findOne({ username: "admin" })._id;
+
+// Example of creating a patient
+db.patients.insertOne({
+  patientId: "P10001",
+  dateOfBirth: new Date("1985-05-15"),
+  firstName: "Jane",
+  lastName: "Doe",
+  gender: "female",
+  bloodType: "O+",
+  height: 165,
+  weight: 60,
+  allergies: ["penicillin"],
+  medicalConditions: ["epilepsy"],
+  medications: [
+    { name: "Levetiracetam", dosage: "500mg", frequency: "twice daily" }
+  ],
+  emergencyContact: {
+    name: "John Doe",
+    relationship: "spouse",
+    phoneNumber: "555-111-2222"
+  },
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  createdBy: adminId
+});
+
+// Example of creating an EEG record
+const sampleFileId = new ObjectId();
+
+db.eegRecords.insertOne({
+  patientId: "P10001",
+  recordDate: new Date(),
+  fileId: sampleFileId,
+  fileName: "eeg_p10001_20250408.edf",
+  fileFormat: "EDF",
+  fileSize: 15728640, // 15MB
+  recordingDuration: 1200, // 20 minutes
+  channelCount: 16,
+  samplingRate: 256,
+  equipmentType: "Nihon Kohden EEG-1200",
+  technician: "Sarah Johnson",
+  status: "new",
+  tags: ["routine", "sleep-deprived"],
+  notes: "Patient reported feeling drowsy during recording.",
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  createdBy: adminId
+});
+
+// Example of recording a download
+const userId = db.users.findOne({ username: "jsmith" })._id;
+
+db.downloadHistory.insertOne({
+  userId: userId,
+  username: "jsmith",
+  fileId: sampleFileId,
+  fileName: "eeg_p10001_20250408.edf",
+  patientId: "P10001",
+  downloadDate: new Date(),
+  ipAddress: "192.168.1.100",
+  userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+  downloadReason: "Review for research study #RS-2025-042"
+});
+
+// Example of recording an audit log entry
+db.auditLog.insertOne({
+  userId: adminId,
+  username: "admin",
+  action: "create",
+  resourceType: "patient",
+  resourceId: "P10001",
+  details: "Created new patient record",
+  timestamp: new Date(),
+  ipAddress: "192.168.1.50",
+  userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
+});

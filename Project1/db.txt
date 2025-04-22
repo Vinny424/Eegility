@@ -1,0 +1,44 @@
+// patients collection
+{
+  _id: ObjectId("..."),
+  name: "John Doe",
+  dob: ISODate("1990-05-15T00:00:00Z"),
+  task: "Task 1",
+  createdAt: ISODate("..."),
+  updatedAt: ISODate("...")
+}
+
+// users collection
+{
+  _id: ObjectId("..."),
+  username: "admin",
+  password: "hashed_password", // Use bcrypt in real implementation
+  role: "admin",
+  createdAt: ISODate("...")
+}
+
+// eeg_files collection
+{
+  _id: ObjectId("..."),
+  patient_id: ObjectId("..."), // Reference to patients._id
+  original_filename: "eeg_data.edf",
+  stored_filename: "unique_filename.edf",
+  file_type: "edf",
+  file_size: 1024000,
+  upload_date: ISODate("..."),
+  metadata: {
+    // Any additional file metadata
+  }
+}
+
+// file_conversions collection
+{
+  _id: ObjectId("..."),
+  original_file_id: ObjectId("..."), // Reference to original file
+  converted_file_id: ObjectId("..."), // Reference to converted file
+  conversion_type: "csv",
+  conversion_date: ISODate("..."),
+  parameters: {
+    // Any conversion parameters used
+  }
+}

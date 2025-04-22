@@ -1,0 +1,3 @@
+MONGODB_URI=mongodb://root:root@database:27017/eegility?authSource=admin
+DB_NAME=eegility
+NODE_ENV=development

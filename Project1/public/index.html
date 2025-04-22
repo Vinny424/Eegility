@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EEGility Hospital</title>
+    <link rel="stylesheet" href="eegility.css">
+</head>
+<body>
+    <header>
+        <img src="eegility-logo.png" alt="EEGility Logo" class="logo">
+        <h1>EEGility Hospital</h1>
+    </header>
+    
+    <!-- Navigation - Always visible -->
+    <nav>
+        <a href="#home" onclick="showSection('home')">Home</a>
+        <a href="#ddb-search" onclick="showSection('ddb-search')">DDB Search</a>
+        <a href="#admin" onclick="showSection('admin')">Admin</a>
+    </nav>
+    
+    <!-- Mode selector - Always visible -->
+    <div class="mode-selector">
+        <label for="mode">Mode:</label>
+        <select id="mode" onchange="changeMode()">
+            <option value="user" selected>User</option>
+            <option value="admin">Admin</option>
+        </select>
+    </div>
+    
+    <!-- Login form - Initially hidden -->
+    <div id="login-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Login</h2>
+            <form id="login-form">
+                <input type="text" id="login-username" placeholder="Username" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <button type="submit">Login</button>
+                <button type="button" onclick="hideLogin()">Cancel</button>
+            </form>
+            <div id="login-error" class="error-popup hidden"></div>
+        </div>
+    </div>
+    
+    <!-- Main content container -->
+    <div class="container">
+        <!-- Home Page - Default visible -->
+        <div id="home" class="form-section">
+            <h2>Welcome to EEGility Hospital</h2>
+            <p>Manage patient data and EEG files efficiently.</p>
+        </div>
+
+        <!-- DDB Search Page - Initially hidden -->
+<div id="ddb-search" class="form-section hidden">
+    <h2>DDB Search</h2>
+    
+    <!-- Login prompt (shown when not logged in) -->
+    <div id="ddb-login-prompt">
+        <p>Please login to access DDB Search features.</p>
+        <button onclick="showDDBLogin()">Login</button>
+    </div>
+    
+    <!-- Login form (hidden by default) -->
+<div id="ddb-login-form" class="hidden">
+    <h3>DDB Login</h3>
+    <form id="ddb-login-form-element" onsubmit="event.preventDefault(); ddbLogin();">
+        <input type="text" id="ddb-username" placeholder="Username" required>
+        <input type="password" id="ddb-password" placeholder="Password" required>
+        <div class="form-buttons">
+            <button type="submit">Login</button>
+            <button type="button" onclick="hideDDBLogin()">Cancel</button>
+        </div>
+        <div id="ddb-login-error" class="error hidden"></div>
+    </form>
+</div>
+    
+    <!-- All DDB content (hidden by default, shown after login) -->
+    <div id="ddb-content" class="hidden">
+        <form id="search-form" onsubmit="return validateSearch()">
+            <input type="text" id="search-input" placeholder="Enter Patient Name or ID">
+            <button type="submit">Search</button>
+        </form>
+        <div id="search-results">
+            <!-- Search results will be displayed here -->
+        </div>
+        
+        <div class="file-download-section">
+            <h3>Download EEG Data</h3>
+            <div>
+                <input type="text" id="download-file-id" placeholder="File ID" required>
+                <select id="download-format" required>
+                    <option value="">Select format</option>
+                    <option value="edf">EDF</option>
+                    <option value="bdf">BDF</option>
+                    <option value="cnt">CNT</option>
+                </select>
+                <button type="button" onclick="downloadEEGFile()">Download</button>
+            </div>
+        </div>
+    </div>
+</div>
+        <!-- Admin Page - Initially hidden -->
+        <div id="admin" class="form-section hidden">
+            <h2>Admin Dashboard</h2>
+            
+            <!-- Admin Login Prompt (shown when not logged in) -->
+            <div id="admin-login-prompt">
+                <p>Please login as admin to access this section.</p>
+                <form id="admin-login-form" onsubmit="event.preventDefault(); adminLogin();">
+                    <input type="text" id="admin-username" placeholder="Username" required>
+                    <input type="password" id="admin-password" placeholder="Password" required>
+                    <button type="submit">Login</button>
+                </form>
+                <div id="admin-login-error" class="error-popup hidden"></div>
+            </div>
+
+        <!-- Admin Controls (shown after login) -->
+        <div id="admin-content" class="hidden">
+            <h3>Admin Controls</h3>
+            <button onclick="showPatientForm()">Create New Patient</button>
+            <button onclick="showModifyPatient()">Modify Patient Data</button>
+            
+            <!-- upload section here -->
+            <div class="file-upload-section">
+                <h3>Upload EEG Data</h3>
+                <form id="upload-form" onsubmit="event.preventDefault(); uploadEEGFile();">
+                    <div>
+                        <label for="patient-name-upload">Patient Name:</label>
+                        <input type="text" id="patient-name-upload" placeholder="Full Name" required>
+                    </div>
+                    <div>
+                        <label for="patient-dob-upload">Date of Birth:</label>
+                        <input type="date" id="patient-dob-upload" required>
+                    </div>
+                    <div>
+                        <label for="patient-task-upload">PatientID:</label>
+                        <input type="text" id="patient-task-upload" placeholder="Required">
+                    </div>
+                    <div>
+                        <label for="eeg-file-upload">EEG File:</label>
+            <input type="file" id="eeg-file-upload" accept=".edf,.bdf,.cnt" required>
+        </div>
+        <div>
+            <label for="upload-file-type">File Type:</label>
+            <select id="upload-file-type" required>
+                <option value="">Select file type</option>
+                <option value="edf">EDF</option>
+                <option value="bdf">BDF</option>
+                <option value="cnt">CNT</option>
+            </select>
+        </div>
+        <div>
+            <button type="submit">Upload Data</button>
+        </div>
+                </form>
+                <div id="upload-status"></div>
+            </div>
+            
+            <!-- Patient creation form -->
+<div id="patient-form" class="hidden" style="margin-top: 20px;">
+    <h4>Create New Patient</h4>
+    <form id="new-patient-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="patient-first-name">First Name*</label>
+                <input type="text" id="patient-first-name" placeholder="First Name" required>
+            </div>
+            <div class="form-group">
+                <label for="patient-last-name">Last Name*</label>
+                <input type="text" id="patient-last-name" placeholder="Last Name" required>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="patient-dob">Date of Birth*</label>
+            <input type="date" id="patient-dob" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="patient-ssn">Last 4 of SSN*</label>
+            <input type="text" id="patient-ssn" placeholder="Last 4 digits" pattern="\d{4}" maxlength="4" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="patient-phone">Phone Number*</label>
+            <input type="tel" id="patient-phone" placeholder="(123) 456-7890" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="patient-address">Address*</label>
+            <input type="text" id="patient-address" placeholder="Street Address" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="patient-id">Patient ID*</label>
+            <input type="text" id="patient-id" placeholder="Patient ID" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="patient-conditions">Medical Conditions (optional)</label>
+            <textarea id="patient-conditions" placeholder="List any medical conditions"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="patient-medications">Prescribed Medications (optional)</label>
+            <textarea id="patient-medications" placeholder="List current medications"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="patient-physician">Primary Physician (optional)</label>
+            <input type="text" id="patient-physician" placeholder="Doctor's Name">
+        </div>
+        
+        <div class="form-buttons">
+            <button type="button" onclick="createPatient()">Create Patient</button>
+            <button type="button" onclick="hidePatientForm()">Cancel</button>
+        </div>
+    </form>
+</div>
+            
+            <!-- Patient modification form -->
+            <div id="modify-patient" class="hidden" style="margin-top: 20px;">
+                <h4>Modify Patient Data</h4>
+                <form id="modify-patient-form">
+                    <input type="text" id="search-patient-id" placeholder="Patient ID" required>
+                    <button type="button" onclick="searchPatient()">Search</button>
+                    <div id="patient-modify-form" class="hidden" style="margin-top: 10px;">
+                        <input type="hidden" id="modify-patient-db-id">
+                        <input type="text" id="modify-name" placeholder="Full Name">
+                        <input type="date" id="modify-dob" placeholder="Date of Birth">
+                        <input type="text" id="modify-ssn" placeholder="SSN">
+                        <input type="text" id="modify-phone" placeholder="Phone">
+                        <input type="text" id="modify-address" placeholder="Address">
+                        <input type="text" id="modify-patient-id" placeholder="Patient ID">
+                        <input type="text" id="modify-conditions" placeholder="Medical Conditions">
+                        <input type="text" id="modify-medications" placeholder="Medications">
+                        <input type="text" id="modify-physician" placeholder="Physician">
+                        <button type="button" onclick="updatePatient()">Update Patient</button>
+                        <button type="button" onclick="hideModifyForm()">Cancel</button>
+                    </div>
+                </form>
+            </div>      
+        </div>
+    </div>
+</div>
+</div>
+        </div>
+    
+    <script src="eegility.js"></script>
+</body>
+</html>

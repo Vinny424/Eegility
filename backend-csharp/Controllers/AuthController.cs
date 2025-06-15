@@ -38,8 +38,20 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Login error for email: {Email}", loginDto.Email);
-            return StatusCode(500, new { message = "Internal server error" });
+            _logger.LogError(ex, "Login error for email: {Email}. Exception: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}", 
+                loginDto.Email, ex.GetType().Name, ex.Message, ex.StackTrace);
+            
+            // Return more detailed error information in development
+            var errorResponse = new
+            {
+                message = "Internal server error during login",
+                error = ex.Message,
+                type = ex.GetType().Name,
+                timestamp = DateTime.UtcNow,
+                path = "/api/auth/login"
+            };
+            
+            return StatusCode(500, errorResponse);
         }
     }
 

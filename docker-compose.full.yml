@@ -1,0 +1,114 @@
+services:
+  # MongoDB database
+  mongodb:
+    image: mongo:latest
+    container_name: eeg-mongodb
+    restart: always
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=eeg_database
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ ping: 1 })", "-u", "admin", "-p", "password", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - eeg-network
+
+  # C# Backend API service
+  backend:
+    build:
+      context: ./backend-csharp
+      dockerfile: Dockerfile
+    container_name: eeg-backend-csharp
+    restart: always
+    ports:
+      - "5001:5000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+      - ConnectionStrings__MongoDB=mongodb://admin:password@mongodb:27017/eeg_database?authSource=admin
+      - MongoDb__ConnectionString=mongodb://admin:password@mongodb:27017/eeg_database?authSource=admin
+      - MongoDb__DatabaseName=eeg_database
+      - JwtSettings__Secret=your_jwt_secret_key_change_this_in_production_32_chars_min
+      - JwtSettings__Issuer=EegilityApi
+      - JwtSettings__Audience=EegilityClient
+    volumes:
+      - eeg_uploads:/app/uploads
+      - eeg_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - eeg-network
+
+  # React Frontend web application
+  frontend:
+    build:
+      context: ./frontend-react
+      dockerfile: Dockerfile
+    container_name: eeg-frontend-react
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - eeg-network
+
+  # Python service for EEG processing and ML
+  eeg-processor:
+    build:
+      context: ./eeg-processor
+      dockerfile: Dockerfile
+    container_name: eeg-processor
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - eeg_uploads:/app/data
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/eeg_database?authSource=admin
+      - DATA_DIR=/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - eeg-network
+
+networks:
+  eeg-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  eeg_uploads:
+  eeg_logs:

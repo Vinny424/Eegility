@@ -4,9 +4,7 @@ import { eegDataService } from '@/services/eegDataService'
 import type { 
   EegData, 
   EegUploadRequest, 
-  AdhdAnalysisRequest,
-  SearchParams,
-  PaginationParams
+  SearchParams
 } from '@/types'
 
 export const useEegData = () => {
@@ -18,7 +16,6 @@ export const useEegData = () => {
     loadingState,
     pagination,
     uploadProgress,
-    setEegDataList,
     addEegData,
     updateEegData,
     removeEegData,
@@ -96,8 +93,8 @@ export const useEegData = () => {
 
   // Download EEG data mutation
   const downloadMutation = useMutation({
-    mutationFn: ({ id, filename }: { id: string; filename: string }) =>
-      eegDataService.downloadEegData(id, filename),
+    mutationFn: ({ id }: { id: string; filename: string }) =>
+      eegDataService.downloadEegData(id),
     onSuccess: (blob, { filename }) => {
       eegDataService.downloadFile(blob, filename)
     },
@@ -126,9 +123,9 @@ export const useEegData = () => {
     queryKey: ['eegData', 'analysis', eegDataId],
     queryFn: () => eegDataService.getAdhdAnalysis(eegDataId),
     enabled: !!eegDataId,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Poll every 5 seconds if analysis is in progress
-      return data?.inProgress ? 5000 : false
+      return query.state.data?.inProgress ? 5000 : false
     },
   })
 

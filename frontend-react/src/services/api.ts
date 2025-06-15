@@ -1,6 +1,5 @@
 import axios, { AxiosResponse, AxiosError } from 'axios'
 import { useAuthStore } from '@/store/authStore'
-import type { ApiResponse } from '@/types'
 
 // Create axios instance
 export const api = axios.create({
@@ -37,7 +36,7 @@ api.interceptors.response.use(
     return response
   },
   async (error: AxiosError) => {
-    const { response, request, config } = error
+    const { response, config } = error
 
     // Enhanced error logging
     console.error('❌ API Error:', {

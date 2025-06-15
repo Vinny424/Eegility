@@ -219,7 +219,7 @@ const EegUpload: React.FC = () => {
                   onFileRemove={onFileRemove}
                   acceptedFiles={selectedFiles}
                   isUploading={isUploading}
-                  uploadProgress={uploadProgress}
+                  uploadProgress={Object.values(uploadProgress)[0] || 0}
                   error={uploadError}
                   disabled={uploadSuccess}
                 />

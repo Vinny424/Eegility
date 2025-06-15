@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/authStore'
 import { authService } from '@/services/authService'
-import type { LoginRequest, RegisterRequest, ChangePasswordRequest } from '@/types'
+import type { LoginRequest, RegisterRequest, ChangePasswordRequest, User } from '@/types'
 
 export const useAuth = () => {
   const queryClient = useQueryClient()
@@ -118,7 +118,7 @@ export const useAuth = () => {
     return changePasswordMutation.mutateAsync(passwordData)
   }
 
-  const updateProfile = (userData: Partial<typeof user>) => {
+  const updateProfile = (userData: Partial<User>) => {
     return updateProfileMutation.mutateAsync(userData)
   }
 

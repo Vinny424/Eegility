@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-  Box,
   VStack,
   HStack,
   Heading,
@@ -112,7 +111,7 @@ const Profile: React.FC = () => {
     }
   }
 
-  const onPasswordSubmit = async (data: PasswordFormData) => {
+  const onPasswordSubmit = async (_data: PasswordFormData) => {
     setIsUpdatingPassword(true)
 
     try {

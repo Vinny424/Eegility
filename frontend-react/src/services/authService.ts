@@ -17,7 +17,7 @@ export const authService = {
       return handleApiResponse(response)
     } catch (error) {
       console.error('❌ Login failed for:', credentials.email, error)
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -30,7 +30,7 @@ export const authService = {
       return handleApiResponse(response)
     } catch (error) {
       console.error('❌ Registration failed for:', userData.email, error)
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -40,7 +40,7 @@ export const authService = {
       const response = await api.get<User>('/auth/profile')
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -50,7 +50,7 @@ export const authService = {
       const response = await api.post<LoginResponse>('/auth/refresh', { refreshToken })
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -80,7 +80,7 @@ export const authService = {
     try {
       await api.post('/user/me/change-password', passwordData)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -90,7 +90,7 @@ export const authService = {
       const response = await api.put<User>('/user/me', userData)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 }

@@ -1,7 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import {
   Box,
-  Flex,
   useColorModeValue,
   useDisclosure,
 } from '@chakra-ui/react'

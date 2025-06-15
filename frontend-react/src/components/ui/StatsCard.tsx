@@ -299,7 +299,7 @@ export const TrendStatsCard: React.FC<TrendStatsCardProps> = ({
               <HStack spacing={1}>
                 {getTrendIcon() && (
                   <Icon
-                    as={getTrendIcon()}
+                    as={getTrendIcon()!}
                     boxSize={3}
                     color={`${getTrendColor()}.500`}
                   />

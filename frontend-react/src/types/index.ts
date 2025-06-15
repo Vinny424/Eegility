@@ -19,6 +19,9 @@ export interface User {
   createdAt: string
   lastLoginAt?: string
   isActive: boolean
+  organization?: string
+  title?: string
+  avatar?: string
 }
 
 export interface LoginRequest {

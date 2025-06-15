@@ -33,37 +33,21 @@ const EegDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const toast = useToast()
-  const { getEegById, downloadEeg } = useEegData()
+  const { getEegDataQuery, downloadEegDataFile } = useEegData()
   
-  const [eegData, setEegData] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [isDownloading, setIsDownloading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchEegData = async () => {
-      if (!id) return
-
-      try {
-        setIsLoading(true)
-        const data = await getEegById(id)
-        setEegData(data)
-      } catch (err: any) {
-        setError(err.message || 'Failed to load EEG data')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchEegData()
-  }, [id, getEegById])
+  
+  const eegQuery = getEegDataQuery(id || '')
+  const eegData = eegQuery.data
+  const isLoading = eegQuery.isLoading
+  const error = eegQuery.error?.message
 
   const handleDownload = async () => {
     if (!id) return
 
     try {
       setIsDownloading(true)
-      await downloadEeg(id)
+      await downloadEegDataFile(id, eegData?.originalFilename || 'eeg-data')
       
       toast({
         title: 'Download started',
@@ -137,11 +121,11 @@ const EegDetail: React.FC = () => {
           <VStack align="start" spacing={1}>
             <Heading size="lg">{eegData.filename}</Heading>
             <HStack spacing={2}>
-              <Badge colorScheme={eegData.status === 'processed' ? 'green' : 'yellow'}>
-                {eegData.status}
+              <Badge colorScheme={eegData.bidsCompliant ? 'green' : 'yellow'}>
+                {eegData.bidsCompliant ? 'Processed' : 'Processing'}
               </Badge>
               <Text fontSize="sm" color="gray.600">
-                Uploaded {formatDistanceToNow(new Date(eegData.uploadedAt))} ago
+                Uploaded {formatDistanceToNow(new Date(eegData.uploadDate))} ago
               </Text>
             </HStack>
           </VStack>
@@ -160,7 +144,7 @@ const EegDetail: React.FC = () => {
           <Button
             colorScheme="brand"
             onClick={handleRunAnalysis}
-            isDisabled={eegData.status !== 'processed'}
+            isDisabled={!eegData.bidsCompliant}
           >
             Run ADHD Analysis
           </Button>
@@ -176,19 +160,19 @@ const EegDetail: React.FC = () => {
           <StatGroup>
             <Stat>
               <StatLabel>Duration</StatLabel>
-              <StatNumber>{eegData.duration || 'N/A'}</StatNumber>
+              <StatNumber>{eegData.metadata?.duration || 'N/A'}</StatNumber>
             </Stat>
             <Stat>
               <StatLabel>Channels</StatLabel>
-              <StatNumber>{eegData.channels || 'N/A'}</StatNumber>
+              <StatNumber>{eegData.metadata?.channels || 'N/A'}</StatNumber>
             </Stat>
             <Stat>
               <StatLabel>Sample Rate</StatLabel>
-              <StatNumber>{eegData.sampleRate || 'N/A'} Hz</StatNumber>
+              <StatNumber>{eegData.metadata?.sampleRate || 'N/A'} Hz</StatNumber>
             </Stat>
             <Stat>
               <StatLabel>File Size</StatLabel>
-              <StatNumber>{eegData.fileSize || 'N/A'}</StatNumber>
+              <StatNumber>{eegData.size || 'N/A'}</StatNumber>
             </Stat>
           </StatGroup>
         </CardBody>
@@ -212,15 +196,15 @@ const EegDetail: React.FC = () => {
                     <VStack align="stretch" spacing={2} pl={4}>
                       <HStack justify="space-between">
                         <Text>Subject ID:</Text>
-                        <Text>{eegData.subjectId || 'N/A'}</Text>
+                        <Text>{eegData.metadata?.subject?.id || 'N/A'}</Text>
                       </HStack>
                       <HStack justify="space-between">
                         <Text>Age:</Text>
-                        <Text>{eegData.age || 'N/A'}</Text>
+                        <Text>{eegData.metadata?.subject?.age || 'N/A'}</Text>
                       </HStack>
                       <HStack justify="space-between">
                         <Text>Gender:</Text>
-                        <Text>{eegData.gender || 'N/A'}</Text>
+                        <Text>{eegData.metadata?.subject?.gender || 'N/A'}</Text>
                       </HStack>
                     </VStack>
                   </Box>
@@ -230,11 +214,11 @@ const EegDetail: React.FC = () => {
                     <VStack align="stretch" spacing={2} pl={4}>
                       <HStack justify="space-between">
                         <Text>Recording Date:</Text>
-                        <Text>{eegData.recordingDate || 'N/A'}</Text>
+                        <Text>{eegData.uploadDate || 'N/A'}</Text>
                       </HStack>
                       <HStack justify="space-between">
                         <Text>Device:</Text>
-                        <Text>{eegData.device || 'N/A'}</Text>
+                        <Text>{'EEG Device'}</Text>
                       </HStack>
                       <HStack justify="space-between">
                         <Text>Notes:</Text>

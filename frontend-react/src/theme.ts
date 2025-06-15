@@ -123,14 +123,12 @@ const components = {
     baseStyle: {
       container: {
         bg: 'white',
-        _dark: {
-          bg: 'gray.800',
-        },
         shadow: 'sm',
         rounded: 'lg',
         border: '1px',
         borderColor: 'gray.200',
         _dark: {
+          bg: 'gray.800',
           borderColor: 'gray.700',
         },
       },

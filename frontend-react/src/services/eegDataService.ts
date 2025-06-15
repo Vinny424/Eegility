@@ -5,9 +5,9 @@ import type {
   AdhdAnalysis, 
   AdhdAnalysisRequest,
   SearchParams,
-  PaginationParams,
-  EegFormat
+  PaginationParams
 } from '@/types'
+import { EegFormat } from '@/types'
 
 export const eegDataService = {
   // Upload EEG data file
@@ -45,7 +45,7 @@ export const eegDataService = {
       
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -60,7 +60,7 @@ export const eegDataService = {
       })
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -70,7 +70,7 @@ export const eegDataService = {
       const response = await api.get<EegData>(`/eegdata/${id}`)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -80,7 +80,7 @@ export const eegDataService = {
       const response = await api.put<EegData>(`/eegdata/${id}`, updateData)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -89,19 +89,19 @@ export const eegDataService = {
     try {
       await api.delete(`/eegdata/${id}`)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
   // Download EEG data file
-  downloadEegData: async (id: string, filename: string): Promise<Blob> => {
+  downloadEegData: async (id: string): Promise<Blob> => {
     try {
       const response = await api.get(`/eegdata/${id}/download`, {
         responseType: 'blob',
       })
       return response.data
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -110,7 +110,7 @@ export const eegDataService = {
     try {
       await api.post('/eegdata/analysis/request', request)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -120,7 +120,7 @@ export const eegDataService = {
       const response = await api.get<AdhdAnalysis>(`/eegdata/${eegDataId}/analysis`)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -138,7 +138,7 @@ export const eegDataService = {
       const response = await api.get<EegData[]>('/eegdata/search', { params })
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -148,7 +148,7 @@ export const eegDataService = {
       const response = await api.get<{ bidsCompliant: boolean }>(`/eegdata/${eegDataId}/bids/validate`)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 

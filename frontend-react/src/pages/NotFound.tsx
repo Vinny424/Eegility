@@ -4,11 +4,10 @@ import {
   Heading,
   Text,
   Button,
-  Image,
   Container
 } from '@chakra-ui/react'
 import { useNavigate } from 'react-router-dom'
-import { HomeIcon } from '@chakra-ui/icons'
+import { ArrowBackIcon } from '@chakra-ui/icons'
 
 const NotFound: React.FC = () => {
   const navigate = useNavigate()
@@ -65,7 +64,7 @@ const NotFound: React.FC = () => {
         {/* Navigation Buttons */}
         <VStack spacing={3}>
           <Button
-            leftIcon={<HomeIcon />}
+            leftIcon={<ArrowBackIcon />}
             colorScheme="brand"
             size="lg"
             onClick={() => navigate('/dashboard')}

@@ -276,7 +276,7 @@ export const deviceService = {
       const response = await api.get<EegDevice[]>('/device/discover')
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -285,7 +285,7 @@ export const deviceService = {
       const response = await api.post<DeviceConnectionResult>(`/device/${deviceId}/connect`, params)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -293,7 +293,7 @@ export const deviceService = {
     try {
       await api.post(`/device/${deviceId}/disconnect`)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -302,7 +302,7 @@ export const deviceService = {
       const response = await api.get<EegDevice[]>('/device/connected')
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -312,7 +312,7 @@ export const deviceService = {
       const response = await api.get<DeviceConfiguration>(`/device/${deviceId}/configuration`)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -320,7 +320,7 @@ export const deviceService = {
     try {
       await api.put(`/device/${deviceId}/configuration`, config)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -329,7 +329,7 @@ export const deviceService = {
       const response = await api.get<DeviceCapabilities[]>(`/device/capabilities/${deviceType}`)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -338,7 +338,7 @@ export const deviceService = {
     try {
       await api.post(`/device/${deviceId}/streaming/start`, config)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -346,7 +346,7 @@ export const deviceService = {
     try {
       await api.post(`/device/${deviceId}/streaming/stop`)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -355,7 +355,7 @@ export const deviceService = {
       const response = await api.get<StreamingStatus>(`/device/${deviceId}/streaming/status`)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -365,7 +365,7 @@ export const deviceService = {
       const response = await api.post<{ recordingId: string }>(`/device/${deviceId}/recording/start`, config)
       return handleApiResponse(response).recordingId
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -373,7 +373,7 @@ export const deviceService = {
     try {
       await api.post(`/device/recording/${recordingId}/stop`)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -382,7 +382,7 @@ export const deviceService = {
       const response = await api.get<RecordingStatus>(`/device/recording/${recordingId}/status`)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -392,7 +392,7 @@ export const deviceService = {
       const response = await api.get<DeviceHealth>(`/device/${deviceId}/health`)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -401,7 +401,7 @@ export const deviceService = {
       const response = await api.get<SignalQuality>(`/device/${deviceId}/signal-quality`)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -411,7 +411,7 @@ export const deviceService = {
       const response = await api.post<ImpedanceTestResult>(`/device/${deviceId}/impedance-test`)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -420,7 +420,7 @@ export const deviceService = {
       const response = await api.post<CalibrationResult>(`/device/${deviceId}/calibrate`, type)
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -428,7 +428,7 @@ export const deviceService = {
     try {
       await api.post(`/device/${deviceId}/test-signal`, signalType)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 
@@ -439,7 +439,7 @@ export const deviceService = {
       const response = await api.get<DeviceEvent[]>(`/device/${deviceId}/events`, { params })
       return handleApiResponse(response)
     } catch (error) {
-      handleApiError(error)
+      return handleApiError(error)
     }
   },
 

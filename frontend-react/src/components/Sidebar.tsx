@@ -7,7 +7,6 @@ import {
   Text,
   Drawer,
   DrawerContent,
-  useDisclosure,
   VStack,
   HStack,
   Badge,
@@ -65,7 +64,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, href, children, badge, isComing
       to={href}
       style={{ textDecoration: 'none' }}
       _focus={{ boxShadow: 'none' }}
-      onClick={(e) => {
+      onClick={(e: React.MouseEvent) => {
         if (isComingSoon) {
           e.preventDefault()
         }

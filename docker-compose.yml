@@ -18,64 +18,66 @@ services:
     networks:
       - eeg-network
 
-  # Backend API service
+  # C# Backend API service
   backend:
     build:
-      context: ./backend
+      context: ./backend-csharp
       dockerfile: Dockerfile
-    container_name: eeg-backend
+    container_name: eeg-backend-csharp
     restart: always
     ports:
-      - "4000:5000"
+      - "5001:5000"
     depends_on:
       - mongodb
     environment:
-      - NODE_ENV=development
-      - PORT=5000
-      - MONGODB_URI=mongodb://admin:password@mongodb:27018/eeg_database?authSource=admin
-      - JWT_SECRET=your_jwt_secret_key_change_this_in_production
-      - UPLOAD_DIR=/app/uploads
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+      - ConnectionStrings__MongoDB=mongodb://admin:password@mongodb:27017/eeg_database?authSource=admin
+      - MongoDb__ConnectionString=mongodb://admin:password@mongodb:27017/eeg_database?authSource=admin
+      - MongoDb__DatabaseName=eeg_database
+      - JwtSettings__Secret=your_jwt_secret_key_change_this_in_production_32_chars_min
+      - JwtSettings__Issuer=EegilityApi
+      - JwtSettings__Audience=EegilityClient
     volumes:
-      - ./backend:/app
-      - /app/node_modules
       - eeg_uploads:/app/uploads
+      - eeg_logs:/app/logs
     networks:
       - eeg-network
 
-  # Frontend web application
-  #  frontend:
-  #    build:
-  #      context: ./frontend
-  #      dockerfile: Dockerfile
-  #    container_name: eeg-frontend
-  #    restart: always
-  #    ports:
-  #      - "80:80"
-  #    depends_on:
-  #      - backend
-  #    volumes:
-  #      - ./frontend/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-  #    networks:
-  #      - eeg-network
+  # React Frontend web application
+  frontend:
+    build:
+      context: ./frontend-react
+      dockerfile: Dockerfile
+    container_name: eeg-frontend-react
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    networks:
+      - eeg-network
 
   # Python service for EEG processing and ML
-  #  eeg-processor:
-  #    build:
-  #      context: ./eeg-processor
-  #      dockerfile: Dockerfile
-  #    container_name: eeg-processor
-  #    restart: always
-  #    depends_on:
-  #      - backend
-  #    volumes:
-  #      - eeg_uploads:/app/data
-  #      - ./eeg-processor:/app
-  #      - /app/__pycache__
-  #    environment:
-  #      - MONGODB_URI=mongodb://admin:password@mongodb:27018/eeg_database?authSource=admin
-  #      - DATA_DIR=/app/data
-  #    networks:
-  #      - eeg-network
+  eeg-processor:
+    build:
+      context: ./eeg-processor
+      dockerfile: Dockerfile
+    container_name: eeg-processor
+    restart: always
+    depends_on:
+      - backend
+    volumes:
+      - eeg_uploads:/app/data
+      - ./eeg-processor:/app
+      - /app/__pycache__
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/eeg_database?authSource=admin
+      - DATA_DIR=/app/data
+    networks:
+      - eeg-network
 
 networks:
   eeg-network:
@@ -84,3 +86,4 @@ networks:
 volumes:
   mongodb_data:
   eeg_uploads:
+  eeg_logs:

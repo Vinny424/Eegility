@@ -28,35 +28,72 @@ api.interceptors.request.use(
 // Response interceptor to handle errors
 api.interceptors.response.use(
   (response: AxiosResponse) => {
+    console.log('✅ API Success:', {
+      method: response.config.method?.toUpperCase(),
+      url: response.config.url,
+      status: response.status,
+      data: response.data
+    })
     return response
   },
   async (error: AxiosError) => {
-    const { response } = error
+    const { response, request, config } = error
+
+    // Enhanced error logging
+    console.error('❌ API Error:', {
+      method: config?.method?.toUpperCase(),
+      url: config?.url,
+      status: response?.status,
+      statusText: response?.statusText,
+      data: response?.data,
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    })
 
     // Handle 401 errors (unauthorized)
     if (response?.status === 401) {
+      console.warn('🔒 Unauthorized - clearing auth and redirecting to login')
       const { clearAuth } = useAuthStore.getState()
       clearAuth()
       window.location.href = '/login'
       return Promise.reject(error)
     }
 
+    // Handle 500 errors with detailed logging
+    if (response?.status === 500) {
+      console.error('🔥 Internal Server Error Details:', {
+        url: config?.url,
+        method: config?.method,
+        requestData: config?.data,
+        responseData: response?.data,
+        headers: response?.headers
+      })
+      const errorMessage = (response.data as any)?.message || 'Internal server error occurred'
+      return Promise.reject(new Error(`Server Error (500): ${errorMessage}`))
+    }
+
     // Handle other HTTP errors
     if (response?.status) {
-      const errorMessage = (response.data as any)?.message || 'An error occurred'
-      return Promise.reject(new Error(errorMessage))
+      const errorMessage = (response.data as any)?.message || `HTTP Error ${response.status}`
+      console.error(`📡 HTTP ${response.status} Error:`, errorMessage)
+      return Promise.reject(new Error(`${response.status}: ${errorMessage}`))
     }
 
     // Handle network errors
     if (error.message === 'Network Error') {
-      return Promise.reject(new Error('Network error. Please check your connection.'))
+      console.error('🌐 Network Error - backend may be down or unreachable')
+      return Promise.reject(new Error('Network error. Please check your connection and ensure the backend is running.'))
     }
 
     // Handle timeout errors
     if (error.code === 'ECONNABORTED') {
+      console.error('⏰ Request Timeout')
       return Promise.reject(new Error('Request timeout. Please try again.'))
     }
 
+    // Handle other errors
+    console.error('❓ Unknown Error:', error)
     return Promise.reject(error)
   }
 )

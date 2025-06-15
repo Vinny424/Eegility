@@ -146,9 +146,10 @@ public class OpenBCIDeviceService : IDeviceService
             var serialPort = new SerialPort(parameters.Port, parameters.BaudRate)
             {
                 ReadTimeout = 5000,
-                WriteTimeout = 5000,
-                DataReceived += (sender, e) => OnDataReceived(deviceId, sender as SerialPort)
+                WriteTimeout = 5000
             };
+            
+            serialPort.DataReceived += (sender, e) => OnDataReceived(deviceId, sender as SerialPort);
 
             serialPort.Open();
 

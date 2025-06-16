@@ -1,31 +1,28 @@
 using AutoMapper;
-using EegilityApi.Data;
 using EegilityApi.Models;
-using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
+using MongoDB.Bson;
 
 namespace EegilityApi.Services;
 
 public class EegDataService : IEegDataService
 {
-    private readonly EegilityDbContext _context;
     private readonly IMapper _mapper;
     private readonly ILogger<EegDataService> _logger;
     private readonly IFileStorageService _fileStorageService;
     private readonly IBidsService _bidsService;
     private readonly IMongoClient _mongoClient;
     private readonly IGridFSBucket _gridFsBucket;
+    private readonly IMongoCollection<EegData> _eegDataCollection;
 
     public EegDataService(
-        EegilityDbContext context,
         IMapper mapper,
         ILogger<EegDataService> logger,
         IFileStorageService fileStorageService,
         IBidsService bidsService,
         IMongoClient mongoClient)
     {
-        _context = context;
         _mapper = mapper;
         _logger = logger;
         _fileStorageService = fileStorageService;
@@ -34,6 +31,7 @@ public class EegDataService : IEegDataService
         
         var database = _mongoClient.GetDatabase("eeg_database");
         _gridFsBucket = new GridFSBucket(database);
+        _eegDataCollection = database.GetCollection<EegData>("eegdata");
     }
 
     public async Task<EegDataResponseDto> UploadEegDataAsync(string userId, EegUploadDto uploadDto)
@@ -97,8 +95,7 @@ public class EegDataService : IEegDataService
             // Check BIDS compliance
             eegData.BidsCompliant = await _bidsService.ValidateBidsComplianceAsync(eegData);
 
-            _context.EegData.Add(eegData);
-            await _context.SaveChangesAsync();
+            await _eegDataCollection.InsertOneAsync(eegData);
 
             _logger.LogInformation("EEG data uploaded successfully: {Filename} by user {UserId}", 
                 eegData.OriginalFilename, userId);
@@ -117,11 +114,14 @@ public class EegDataService : IEegDataService
         try
         {
             var skip = (page - 1) * pageSize;
-            var eegDataList = await _context.EegData
-                .Where(e => e.UserId == userId)
-                .OrderByDescending(e => e.UploadDate)
+            var filter = Builders<EegData>.Filter.Eq(e => e.UserId, userId);
+            var sort = Builders<EegData>.Sort.Descending(e => e.UploadDate);
+            
+            var eegDataList = await _eegDataCollection
+                .Find(filter)
+                .Sort(sort)
                 .Skip(skip)
-                .Take(pageSize)
+                .Limit(pageSize)
                 .ToListAsync();
 
             return _mapper.Map<List<EegDataResponseDto>>(eegDataList);
@@ -137,8 +137,12 @@ public class EegDataService : IEegDataService
     {
         try
         {
-            var eegData = await _context.EegData
-                .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+            var filter = Builders<EegData>.Filter.And(
+                Builders<EegData>.Filter.Eq(e => e.Id, id),
+                Builders<EegData>.Filter.Eq(e => e.UserId, userId)
+            );
+            
+            var eegData = await _eegDataCollection.Find(filter).FirstOrDefaultAsync();
 
             return eegData != null ? _mapper.Map<EegDataResponseDto>(eegData) : null;
         }
@@ -153,8 +157,12 @@ public class EegDataService : IEegDataService
     {
         try
         {
-            var eegData = await _context.EegData
-                .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+            var filter = Builders<EegData>.Filter.And(
+                Builders<EegData>.Filter.Eq(e => e.Id, id),
+                Builders<EegData>.Filter.Eq(e => e.UserId, userId)
+            );
+            
+            var eegData = await _eegDataCollection.Find(filter).FirstOrDefaultAsync();
 
             if (eegData == null)
                 return false;
@@ -165,8 +173,7 @@ public class EegDataService : IEegDataService
                 await _gridFsBucket.DeleteAsync(MongoDB.Bson.ObjectId.Parse(eegData.GridFsId));
             }
 
-            _context.EegData.Remove(eegData);
-            await _context.SaveChangesAsync();
+            await _eegDataCollection.DeleteOneAsync(filter);
 
             _logger.LogInformation("EEG data deleted: {Id} by user {UserId}", id, userId);
             return true;
@@ -182,8 +189,12 @@ public class EegDataService : IEegDataService
     {
         try
         {
-            var eegData = await _context.EegData
-                .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+            var filter = Builders<EegData>.Filter.And(
+                Builders<EegData>.Filter.Eq(e => e.Id, id),
+                Builders<EegData>.Filter.Eq(e => e.UserId, userId)
+            );
+            
+            var eegData = await _eegDataCollection.Find(filter).FirstOrDefaultAsync();
 
             if (eegData == null)
                 throw new NotFoundException("EEG data not found");
@@ -196,7 +207,7 @@ public class EegDataService : IEegDataService
             // Re-check BIDS compliance if metadata changed
             eegData.BidsCompliant = await _bidsService.ValidateBidsComplianceAsync(eegData);
 
-            await _context.SaveChangesAsync();
+            await _eegDataCollection.ReplaceOneAsync(filter, eegData);
 
             _logger.LogInformation("EEG data updated: {Id} by user {UserId}", id, userId);
             return _mapper.Map<EegDataResponseDto>(eegData);
@@ -212,8 +223,12 @@ public class EegDataService : IEegDataService
     {
         try
         {
-            var eegData = await _context.EegData
-                .FirstOrDefaultAsync(e => e.Id == eegDataId && e.UserId == userId);
+            var filter = Builders<EegData>.Filter.And(
+                Builders<EegData>.Filter.Eq(e => e.Id, eegDataId),
+                Builders<EegData>.Filter.Eq(e => e.UserId, userId)
+            );
+            
+            var eegData = await _eegDataCollection.Find(filter).FirstOrDefaultAsync();
 
             if (eegData == null)
                 return false;
@@ -225,7 +240,7 @@ public class EegDataService : IEegDataService
                 InProgress = false
             };
 
-            await _context.SaveChangesAsync();
+            await _eegDataCollection.ReplaceOneAsync(filter, eegData);
 
             _logger.LogInformation("ADHD analysis requested for EEG data {Id} by user {UserId}", 
                 eegDataId, userId);
@@ -246,8 +261,12 @@ public class EegDataService : IEegDataService
     {
         try
         {
-            var eegData = await _context.EegData
-                .FirstOrDefaultAsync(e => e.Id == eegDataId && e.UserId == userId);
+            var filter = Builders<EegData>.Filter.And(
+                Builders<EegData>.Filter.Eq(e => e.Id, eegDataId),
+                Builders<EegData>.Filter.Eq(e => e.UserId, userId)
+            );
+            
+            var eegData = await _eegDataCollection.Find(filter).FirstOrDefaultAsync();
 
             return eegData?.AdhdAnalysis;
         }
@@ -262,8 +281,12 @@ public class EegDataService : IEegDataService
     {
         try
         {
-            var eegData = await _context.EegData
-                .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+            var filter = Builders<EegData>.Filter.And(
+                Builders<EegData>.Filter.Eq(e => e.Id, id),
+                Builders<EegData>.Filter.Eq(e => e.UserId, userId)
+            );
+            
+            var eegData = await _eegDataCollection.Find(filter).FirstOrDefaultAsync();
 
             if (eegData == null || string.IsNullOrEmpty(eegData.GridFsId))
                 return null;
@@ -282,7 +305,9 @@ public class EegDataService : IEegDataService
     {
         try
         {
-            var eegData = await _context.EegData.FindAsync(eegDataId);
+            var filter = Builders<EegData>.Filter.Eq(e => e.Id, eegDataId);
+            var eegData = await _eegDataCollection.Find(filter).FirstOrDefaultAsync();
+            
             if (eegData == null)
                 return false;
 
@@ -300,28 +325,38 @@ public class EegDataService : IEegDataService
     {
         try
         {
-            var query = _context.EegData.Where(e => e.UserId == userId);
+            var filterBuilder = Builders<EegData>.Filter;
+            var filters = new List<FilterDefinition<EegData>>
+            {
+                filterBuilder.Eq(e => e.UserId, userId)
+            };
 
             if (!string.IsNullOrEmpty(searchTerm))
             {
-                query = query.Where(e => 
-                    e.OriginalFilename.Contains(searchTerm) ||
-                    e.Notes.Contains(searchTerm) ||
-                    e.Metadata.Subject.Id.Contains(searchTerm));
+                var searchFilter = filterBuilder.Or(
+                    filterBuilder.Regex(e => e.OriginalFilename, new BsonRegularExpression(searchTerm, "i")),
+                    filterBuilder.Regex(e => e.Notes, new BsonRegularExpression(searchTerm, "i")),
+                    filterBuilder.Regex(e => e.Metadata.Subject.Id, new BsonRegularExpression(searchTerm, "i"))
+                );
+                filters.Add(searchFilter);
             }
 
             if (tags != null && tags.Any())
             {
-                query = query.Where(e => e.Tags.Any(t => tags.Contains(t)));
+                filters.Add(filterBuilder.AnyIn(e => e.Tags, tags));
             }
 
             if (format.HasValue)
             {
-                query = query.Where(e => e.Format == format.Value);
+                filters.Add(filterBuilder.Eq(e => e.Format, format.Value));
             }
 
-            var results = await query
-                .OrderByDescending(e => e.UploadDate)
+            var combinedFilter = filterBuilder.And(filters);
+            var sort = Builders<EegData>.Sort.Descending(e => e.UploadDate);
+            
+            var results = await _eegDataCollection
+                .Find(combinedFilter)
+                .Sort(sort)
                 .ToListAsync();
 
             return _mapper.Map<List<EegDataResponseDto>>(results);

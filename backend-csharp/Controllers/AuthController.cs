@@ -1,8 +1,9 @@
 using EegilityApi.Models;
-using EegilityApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using MongoDB.Driver;
+using MongoDB.Bson;
 
 namespace EegilityApi.Controllers;
 
@@ -10,12 +11,12 @@ namespace EegilityApi.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly IAuthService _authService;
+    private readonly IMongoClient _mongoClient;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    public AuthController(IMongoClient mongoClient, ILogger<AuthController> logger)
     {
-        _authService = authService;
+        _mongoClient = mongoClient;
         _logger = logger;
     }
 
@@ -29,29 +30,13 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var result = await _authService.LoginAsync(loginDto);
-            return Ok(result);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(new { message = ex.Message });
+            // Redirect to AuthDirectController for now
+            return BadRequest(new { message = "Please use /api/auth-direct/login endpoint" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Login error for email: {Email}. Exception: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}", 
-                loginDto.Email, ex.GetType().Name, ex.Message, ex.StackTrace);
-            
-            // Return more detailed error information in development
-            var errorResponse = new
-            {
-                message = "Internal server error during login",
-                error = ex.Message,
-                type = ex.GetType().Name,
-                timestamp = DateTime.UtcNow,
-                path = "/api/auth/login"
-            };
-            
-            return StatusCode(500, errorResponse);
+            _logger.LogError(ex, "Login error for email: {Email}", loginDto.Email);
+            return StatusCode(500, new { message = "Internal server error during login" });
         }
     }
 
@@ -65,12 +50,8 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var result = await _authService.RegisterAsync(registrationDto);
-            return CreatedAtAction(nameof(GetProfile), new { id = result.Id }, result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
+            // Redirect to AuthDirectController for now
+            return BadRequest(new { message = "Please use /api/auth-direct/register endpoint" });
         }
         catch (Exception ex)
         {
@@ -93,23 +74,28 @@ public class AuthController : ControllerBase
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
-            var user = await _authService.GetUserByIdAsync(userId);
+            var database = _mongoClient.GetDatabase("eeg_database");
+            var usersCollection = database.GetCollection<BsonDocument>("users");
+            
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(userId));
+            var user = await usersCollection.Find(filter).FirstOrDefaultAsync();
+            
             if (user == null)
                 return NotFound();
 
             return Ok(new UserResponseDto
             {
-                Id = user.Id,
-                Email = user.Email,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Role = user.Role,
-                Institution = user.Institution,
-                Department = user.Department,
-                Phone = user.Phone,
-                CreatedAt = user.CreatedAt,
-                LastLoginAt = user.LastLoginAt,
-                IsActive = user.IsActive
+                Id = user["_id"].AsObjectId.ToString(),
+                Email = user["email"].AsString,
+                FirstName = user["firstName"].AsString,
+                LastName = user["lastName"].AsString,
+                Role = user.Contains("role") ? user["role"].AsString : "User",
+                Institution = user.Contains("institution") ? user["institution"].AsString : "",
+                Department = user.Contains("department") ? user["department"].AsString : "",
+                Phone = user.Contains("phone") ? user["phone"].AsString : "",
+                CreatedAt = user["createdAt"].ToUniversalTime(),
+                LastLoginAt = user.Contains("lastLoginAt") ? user["lastLoginAt"].ToUniversalTime() : (DateTime?)null,
+                IsActive = user["isActive"].AsBoolean
             });
         }
         catch (Exception ex)
@@ -129,12 +115,8 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var isValid = await _authService.ValidateRefreshTokenAsync(refreshToken);
-            if (!isValid)
-                return Unauthorized(new { message = "Invalid refresh token" });
-
-            // For now, return unauthorized as refresh token implementation needs more work
-            return Unauthorized(new { message = "Refresh token validation not fully implemented" });
+            // Refresh token functionality disabled - redirect to auth-direct
+            return BadRequest(new { message = "Refresh token not implemented, please login again" });
         }
         catch (Exception ex)
         {

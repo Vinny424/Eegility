@@ -1,15 +1,14 @@
-using EegilityApi.Data;
 using EegilityApi.Models;
 using EegilityApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using Serilog;
 using System.Text;
 using FluentValidation;
 using EegilityApi.Validators;
+using Microsoft.AspNetCore.Server.IIS;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +23,18 @@ builder.Host.UseSerilog();
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+// Configure file upload limits for EEG files (up to 500MB)
+builder.Services.Configure<IISServerOptions>(options =>
+{
+    options.MaxRequestBodySize = 500 * 1024 * 1024; // 500MB
+});
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 500 * 1024 * 1024; // 500MB
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -63,12 +74,7 @@ builder.Services.AddSingleton<IMongoClient>(serviceProvider =>
     return new MongoClient(settings!.ConnectionString);
 });
 
-// Entity Framework with MongoDB
-builder.Services.AddDbContext<EegilityDbContext>(options =>
-{
-    var connectionString = builder.Configuration.GetConnectionString("MongoDB");
-    options.UseMongoDB(connectionString, "eeg_database");
-});
+// MongoDB Direct Connection (EF Core removed due to BSON compatibility issues)
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -94,12 +100,11 @@ builder.Services.AddAuthentication(x =>
     };
 });
 
-// Services
-builder.Services.AddScoped<IUserService, UserService>();
+// Services (EF-dependent services removed temporarily to fix upload functionality)
 builder.Services.AddScoped<IEegDataService, EegDataService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IBidsService, BidsService>();
+// Note: UserService and AuthService disabled due to EF dependency - using AuthDirectController instead
 
 // Validators
 builder.Services.AddValidatorsFromAssemblyContaining<UserRegistrationValidator>();

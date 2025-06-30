@@ -30,7 +30,7 @@ public class AutoMapperProfile : Profile
             .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.Department))
             .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.Phone))
             .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
-            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => "User"))
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => UserRole.User))
             .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
             .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
             .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true))
@@ -41,6 +41,7 @@ public class AutoMapperProfile : Profile
         // EEG Data mappings
         CreateMap<EegData, EegDataResponseDto>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
             .ForMember(dest => dest.Filename, opt => opt.MapFrom(src => src.Filename))
             .ForMember(dest => dest.OriginalFilename, opt => opt.MapFrom(src => src.OriginalFilename))
             .ForMember(dest => dest.Format, opt => opt.MapFrom(src => src.Format.ToString()))
@@ -69,6 +70,10 @@ public class AutoMapperProfile : Profile
             .ForMember(dest => dest.GridFsId, opt => opt.Ignore())
             .ForMember(dest => dest.BidsData, opt => opt.Ignore())
             .ForMember(dest => dest.User, opt => opt.Ignore())
+            .ForMember(dest => dest.IsShared, opt => opt.Ignore())
+            .ForMember(dest => dest.SharedWithUserIds, opt => opt.Ignore())
+            .ForMember(dest => dest.LastSharedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.SharingRequests, opt => opt.Ignore())
             .ForMember(dest => dest.Metadata, opt => opt.MapFrom(src => new EegMetadata
             {
                 Subject = new SubjectMetadata

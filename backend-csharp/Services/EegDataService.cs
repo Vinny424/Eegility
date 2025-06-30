@@ -368,6 +368,43 @@ public class EegDataService : IEegDataService
         }
     }
 
+    public async Task<List<EegDataResponseDto>> GetEegDataByIdsAsync(List<string> eegDataIds)
+    {
+        try
+        {
+            var filter = Builders<EegData>.Filter.In(x => x.Id, eegDataIds);
+            var eegDataList = await _eegDataCollection.Find(filter).ToListAsync();
+            
+            var result = new List<EegDataResponseDto>();
+            foreach (var eegData in eegDataList)
+            {
+                result.Add(new EegDataResponseDto
+                {
+                    Id = eegData.Id,
+                    UserId = eegData.UserId,
+                    Filename = eegData.Filename,
+                    OriginalFilename = eegData.OriginalFilename,
+                    Format = eegData.Format.ToString(),
+                    Size = eegData.Size,
+                    UploadDate = eegData.UploadDate,
+                    Metadata = eegData.Metadata,
+                    BidsCompliant = eegData.BidsCompliant,
+                    Tags = eegData.Tags,
+                    Notes = eegData.Notes,
+                    AdhdAnalysis = eegData.AdhdAnalysis,
+                    DataUrl = eegData.DataUrl
+                });
+            }
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving EEG data by IDs");
+            throw;
+        }
+    }
+
     private static EegFormat GetEegFormatFromExtension(string extension)
     {
         return extension.ToLowerInvariant() switch

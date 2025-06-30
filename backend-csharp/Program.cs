@@ -74,6 +74,13 @@ builder.Services.AddSingleton<IMongoClient>(serviceProvider =>
     return new MongoClient(settings!.ConnectionString);
 });
 
+builder.Services.AddScoped<IMongoDatabase>(serviceProvider =>
+{
+    var client = serviceProvider.GetService<IMongoClient>();
+    var settings = builder.Configuration.GetSection("MongoDb").Get<MongoDbSettings>();
+    return client!.GetDatabase(settings!.DatabaseName);
+});
+
 // MongoDB Direct Connection (EF Core removed due to BSON compatibility issues)
 
 // JWT Authentication
@@ -104,6 +111,7 @@ builder.Services.AddAuthentication(x =>
 builder.Services.AddScoped<IEegDataService, EegDataService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IBidsService, BidsService>();
+builder.Services.AddScoped<IDataSharingService, DataSharingService>();
 // Note: UserService and AuthService disabled due to EF dependency - using AuthDirectController instead
 
 // Validators

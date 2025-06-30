@@ -85,7 +85,7 @@ public class AuthService : IAuthService
                 Department = registrationDto.Department,
                 Phone = registrationDto.Phone,
                 PasswordHash = HashPassword(registrationDto.Password),
-                Role = "User",
+                Role = UserRole.User,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 IsActive = true,
@@ -115,7 +115,7 @@ public class AuthService : IAuthService
             new(ClaimTypes.NameIdentifier, user.Id),
             new(ClaimTypes.Email, user.Email),
             new(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
-            new(ClaimTypes.Role, user.Role),
+            new(ClaimTypes.Role, user.Role.ToString()),
             new("institution", user.Institution ?? ""),
             new("department", user.Department ?? "")
         };

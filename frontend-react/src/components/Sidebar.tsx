@@ -42,12 +42,12 @@ const navItems = [
   { name: 'Dashboard', icon: Home, href: '/dashboard' },
   { name: 'Upload EEG', icon: Upload, href: '/upload' },
   { name: 'ADHD Analysis', icon: Brain, href: '/analysis', isComingSoon: true },
-  { name: 'Data Browser', icon: Database, href: '/browse', isComingSoon: true },
+  { name: 'Data Browser', icon: Database, href: '/browse' },
   { name: 'Reports', icon: FileText, href: '/reports', isComingSoon: true },
   { name: 'Live Streaming', icon: Activity, href: '/streaming', isComingSoon: true },
   { name: 'Profile', icon: User, href: '/profile' },
   { name: 'Settings', icon: Settings, href: '/settings', isComingSoon: true },
-  { name: 'Help', icon: HelpCircle, href: '/help', isComingSoon: true },
+  { name: 'Help', icon: HelpCircle, href: '/help' },
 ]
 
 const NavItem: React.FC<NavItemProps> = ({ icon, href, children, badge, isComingSoon }) => {

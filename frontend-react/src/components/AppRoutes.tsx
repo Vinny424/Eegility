@@ -12,6 +12,8 @@ const EegUpload = lazy(() => import('@/pages/EegUpload'))
 const EegDetail = lazy(() => import('@/pages/EegDetail'))
 const AdhdAnalysis = lazy(() => import('@/pages/AdhdAnalysis'))
 const Profile = lazy(() => import('@/pages/Profile'))
+const Help = lazy(() => import('@/pages/Help'))
+const DataBrowser = lazy(() => import('@/pages/DataBrowser'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 
 // Loading component
@@ -101,6 +103,8 @@ export const AppRoutes: React.FC = () => {
           <Route path="eeg/:id" element={<EegDetail />} />
           <Route path="analysis/:id" element={<AdhdAnalysis />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="help" element={<Help />} />
+          <Route path="browse" element={<DataBrowser />} />
         </Route>
 
         {/* 404 route */}

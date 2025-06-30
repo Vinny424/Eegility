@@ -9,6 +9,8 @@ using System.Text;
 
 namespace EegilityApi.Controllers;
 
+// Temporarily disabled to avoid conflicts with main AuthController
+/*
 [ApiController]
 [Route("api/auth-direct")]
 public class AuthDirectController : ControllerBase
@@ -188,3 +190,4 @@ public class AuthDirectController : ControllerBase
         public string Password { get; set; } = string.Empty;
     }
 }
+*/

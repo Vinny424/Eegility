@@ -47,8 +47,14 @@ public class EegData
     // BIDS-specific fields
     public BidsMetadata BidsData { get; set; } = new();
 
+    // Sharing and access control
+    public bool IsShared { get; set; } = false;
+    public List<string> SharedWithUserIds { get; set; } = new();
+    public DateTime? LastSharedAt { get; set; }
+
     // Navigation property
     public virtual User? User { get; set; }
+    public virtual ICollection<DataSharingRequest> SharingRequests { get; set; } = new List<DataSharingRequest>();
 }
 
 public enum EegFormat
@@ -150,6 +156,7 @@ public class EegUploadDto
 public class EegDataResponseDto
 {
     public string Id { get; set; } = string.Empty;
+    public string UserId { get; set; } = string.Empty;
     public string Filename { get; set; } = string.Empty;
     public string OriginalFilename { get; set; } = string.Empty;
     public string Format { get; set; } = string.Empty;
@@ -167,4 +174,42 @@ public class AdhdAnalysisRequestDto
 {
     [Required]
     public string EegDataId { get; set; } = string.Empty;
+}
+
+// Data Browser DTOs
+public class DataBrowserResponseDto
+{
+    public List<EegDataWithAccessInfoDto> Data { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages { get; set; }
+    public UserRole UserRole { get; set; }
+    public bool CanViewAll { get; set; }
+}
+
+public class EegDataWithAccessInfoDto
+{
+    public EegDataResponseDto EegData { get; set; } = new();
+    public bool IsOwner { get; set; }
+    public AccessType AccessType { get; set; }
+    public SharingPermission Permission { get; set; }
+    public string OwnerName { get; set; } = string.Empty;
+    public string OwnerEmail { get; set; } = string.Empty;
+    public string OwnerInstitution { get; set; } = string.Empty;
+}
+
+public enum AccessType
+{
+    Owner,           // User owns the data
+    Admin,           // Admin access to all data
+    DepartmentHead,  // Department head access to department data
+    Shared           // Shared data access through sharing requests
+}
+
+public enum DataOwnershipFilter
+{
+    All,             // Show all accessible data
+    OwnData,         // Show only user's own data
+    SharedWithMe     // Show only data shared with user
 }

@@ -23,7 +23,7 @@ public class User
     [Required]
     public string PasswordHash { get; set; } = string.Empty;
 
-    public string Role { get; set; } = "User";
+    public UserRole Role { get; set; } = UserRole.User;
 
     public string Institution { get; set; } = string.Empty;
 
@@ -41,8 +41,21 @@ public class User
 
     public List<string> Permissions { get; set; } = new();
 
+    // Medical RBAC specific fields
+    public bool CanViewDepartmentData { get; set; } = false;
+    public bool CanViewAllData { get; set; } = false;
+    public List<string> SharedDataAccess { get; set; } = new(); // EEG IDs user has access to
+
     // Navigation properties
     public virtual ICollection<EegData> EegDataRecords { get; set; } = new List<EegData>();
+}
+
+// Medical RBAC Enums
+public enum UserRole
+{
+    User,           // Can upload/view own files + receive/share
+    DepartmentHead, // Can read/download all department data
+    Admin          // Can read/download all data
 }
 
 public class UserRegistrationDto
@@ -84,7 +97,7 @@ public class UserResponseDto
     public string Email { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
-    public string Role { get; set; } = string.Empty;
+    public UserRole Role { get; set; }
     public string Institution { get; set; } = string.Empty;
     public string Department { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;

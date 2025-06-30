@@ -79,7 +79,7 @@ public class AuthController : ControllerBase
                     Email = user["email"].AsString,
                     FirstName = user["firstName"].AsString,
                     LastName = user["lastName"].AsString,
-                    Role = user.Contains("role") ? user["role"].AsString : "User",
+                    Role = user.Contains("role") ? (UserRole)user["role"].AsInt32 : UserRole.User,
                     Institution = user.Contains("institution") ? user["institution"].AsString : "",
                     Department = user.Contains("department") ? user["department"].AsString : "",
                     Phone = user.Contains("phone") ? user["phone"].AsString : "",
@@ -133,7 +133,7 @@ public class AuthController : ControllerBase
                 ["firstName"] = registrationDto.FirstName,
                 ["lastName"] = registrationDto.LastName,
                 ["passwordHash"] = hashedPassword,
-                ["role"] = "User",
+                ["role"] = 0, // UserRole.User enum value
                 ["institution"] = registrationDto.Institution ?? "",
                 ["department"] = registrationDto.Department ?? "",
                 ["phone"] = registrationDto.Phone ?? "",
@@ -153,7 +153,7 @@ public class AuthController : ControllerBase
                 Email = newUser["email"].AsString,
                 FirstName = newUser["firstName"].AsString,
                 LastName = newUser["lastName"].AsString,
-                Role = newUser["role"].AsString,
+                Role = UserRole.User,
                 Institution = newUser["institution"].AsString,
                 Department = newUser["department"].AsString,
                 Phone = newUser["phone"].AsString,
@@ -205,7 +205,7 @@ public class AuthController : ControllerBase
                 Email = user["email"].AsString,
                 FirstName = user["firstName"].AsString,
                 LastName = user["lastName"].AsString,
-                Role = user.Contains("role") ? user["role"].AsString : "User",
+                Role = user.Contains("role") ? (UserRole)user["role"].AsInt32 : UserRole.User,
                 Institution = user.Contains("institution") ? user["institution"].AsString : "",
                 Department = user.Contains("department") ? user["department"].AsString : "",
                 Phone = user.Contains("phone") ? user["phone"].AsString : "",
@@ -310,7 +310,8 @@ public class AuthController : ControllerBase
                 new Claim(ClaimTypes.NameIdentifier, user["_id"].AsObjectId.ToString()),
                 new Claim(ClaimTypes.Email, user["email"].AsString),
                 new Claim(ClaimTypes.GivenName, user["firstName"].AsString),
-                new Claim(ClaimTypes.Surname, user["lastName"].AsString)
+                new Claim(ClaimTypes.Surname, user["lastName"].AsString),
+                new Claim(ClaimTypes.Role, user.Contains("role") ? ((UserRole)user["role"].AsInt32).ToString() : UserRole.User.ToString())
             }),
             Expires = DateTime.UtcNow.AddHours(24),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)

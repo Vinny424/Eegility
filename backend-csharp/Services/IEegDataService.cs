@@ -14,4 +14,5 @@ public interface IEegDataService
     Task<Stream?> DownloadEegDataAsync(string id, string userId);
     Task<bool> ValidateBidsComplianceAsync(string eegDataId);
     Task<List<EegDataResponseDto>> SearchEegDataAsync(string userId, string? searchTerm, List<string>? tags, EegFormat? format);
+    Task<List<EegDataResponseDto>> GetEegDataByIdsAsync(List<string> eegDataIds);
 }

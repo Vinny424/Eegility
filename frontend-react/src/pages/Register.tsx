@@ -14,7 +14,8 @@ import {
   Link,
   useToast,
   Container,
-  Divider
+  Divider,
+  useColorModeValue
 } from '@chakra-ui/react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -41,6 +42,10 @@ const Register: React.FC = () => {
   const { register: registerUser } = useAuth()
   const navigate = useNavigate()
   const toast = useToast()
+
+  // Dark mode responsive colors
+  const formBg = useColorModeValue('white', 'gray.800')
+  const textColor = useColorModeValue('gray.600', 'gray.400')
 
   const {
     register,
@@ -85,12 +90,12 @@ const Register: React.FC = () => {
           <Heading size="xl" mb={2}>
             Join EEGility
           </Heading>
-          <Text color="gray.600">
+          <Text color={textColor}>
             Create your account to start analyzing EEG data
           </Text>
         </Box>
 
-        <Box w="full" bg="white" p={8} borderRadius="lg" boxShadow="md">
+        <Box w="full" bg={formBg} p={8} borderRadius="lg" boxShadow="md">
           <form onSubmit={handleSubmit(onSubmit)}>
             <VStack spacing={4}>
               {error && (
@@ -173,7 +178,7 @@ const Register: React.FC = () => {
 
           <Divider my={6} />
 
-          <Text textAlign="center" fontSize="sm" color="gray.600">
+          <Text textAlign="center" fontSize="sm" color={textColor}>
             Already have an account?{' '}
             <Link as={RouterLink} to="/login" color="brand.500" fontWeight="medium">
               Sign in here

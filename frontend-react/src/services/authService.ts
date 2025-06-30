@@ -12,7 +12,7 @@ export const authService = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
     try {
       console.log('🔐 Attempting login for:', credentials.email)
-      const response = await api.post<LoginResponse>('/auth-direct/login', credentials)
+      const response = await api.post<LoginResponse>('/auth/login', credentials)
       console.log('✅ Login successful for:', credentials.email)
       return handleApiResponse(response)
     } catch (error) {
@@ -25,7 +25,7 @@ export const authService = {
   register: async (userData: RegisterRequest): Promise<User> => {
     try {
       console.log('📝 Attempting registration for:', userData.email)
-      const response = await api.post<User>('/auth-direct/register', userData)
+      const response = await api.post<User>('/auth/register', userData)
       console.log('✅ Registration successful for:', userData.email)
       return handleApiResponse(response)
     } catch (error) {

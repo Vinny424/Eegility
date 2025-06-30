@@ -84,10 +84,7 @@ public class AuthDirectController : ControllerBase
             _logger.LogError(ex, "Registration failed for {Email}: {Error}", request.Email, ex.Message);
             return StatusCode(500, new
             {
-                message = "Registration failed",
-                error = ex.Message,
-                type = ex.GetType().Name,
-                timestamp = DateTime.UtcNow
+                message = "Registration failed"
             });
         }
     }
@@ -144,17 +141,19 @@ public class AuthDirectController : ControllerBase
             _logger.LogError(ex, "Login failed for {Email}: {Error}", request.Email, ex.Message);
             return StatusCode(500, new
             {
-                message = "Login failed",
-                error = ex.Message,
-                type = ex.GetType().Name,
-                stackTrace = ex.StackTrace
+                message = "Login failed"
             });
         }
     }
 
     private string GenerateJwtToken(BsonDocument user)
     {
-        var jwtSecret = _configuration["JwtSettings:Secret"] ?? "fallback_secret_key_for_development_only_not_secure";
+        var jwtSecret = _configuration["JwtSettings:Secret"];
+        if (string.IsNullOrEmpty(jwtSecret))
+        {
+            _logger.LogError("JWT Secret not configured properly");
+            throw new InvalidOperationException("JWT configuration is missing");
+        }
         var key = Encoding.ASCII.GetBytes(jwtSecret);
 
         var tokenDescriptor = new SecurityTokenDescriptor

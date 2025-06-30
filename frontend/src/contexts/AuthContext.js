@@ -31,11 +31,21 @@ export function AuthProvider({ children }) {
       }
       
       try {
-        const response = await axios.get('/api/auth/me');
-        setCurrentUser(response.data);
+        const response = await axios.get('/api/auth/validate', {
+          timeout: 5000 // 5 second timeout
+        });
+        if (response.data.valid) {
+          // If we have valid token data, set it as current user
+          setCurrentUser({
+            id: response.data.userId,
+            email: response.data.email
+          });
+        } else {
+          logout();
+        }
       } catch (error) {
         console.error('Token verification failed:', error);
-        // Clear invalid token
+        // Clear invalid token but don't throw error
         logout();
       } finally {
         setLoading(false);

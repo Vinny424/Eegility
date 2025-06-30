@@ -52,11 +52,12 @@ api.interceptors.response.use(
 
     // Handle 401 errors (unauthorized)
     if (response?.status === 401) {
-      console.warn('🔒 Unauthorized - clearing auth and redirecting to login')
+      console.warn('🔒 Unauthorized - clearing auth state')
       const { clearAuth } = useAuthStore.getState()
       clearAuth()
-      window.location.href = '/login'
-      return Promise.reject(error)
+      // Let the application handle navigation through auth state changes
+      // Don't directly manipulate window.location to avoid React Router conflicts
+      return Promise.reject(new Error('Authentication required. Please log in again.'))
     }
 
     // Handle 500 errors with detailed logging

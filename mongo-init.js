@@ -15,7 +15,7 @@ if (!adminExists) {
   const adminPasswordHash = "$2a$10$CwTycUXWue0Thq9StjUM0uQCo.skQF2u3XsTKkd.0NAzW8XTB3YuG";
   
   db.users.insertOne({
-    email: "  `admin@eegility.com",
+    email: "admin@eegility.com",
     firstName: "System",
     lastName: "Administrator",
     passwordHash: adminPasswordHash,

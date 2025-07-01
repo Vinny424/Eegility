@@ -31,9 +31,7 @@ app.use(morgan('dev'));
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
-  useUnifiedTopology: true,
-  useCreateIndex: true,
-  useFindAndModify: false
+  useUnifiedTopology: true
 })
   .then(() => console.log('MongoDB connected successfully'))
   .catch((err) => console.error('MongoDB connection error:', err));

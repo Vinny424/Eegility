@@ -89,6 +89,84 @@ router.get('/list', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/eeg/browse
+// @desc    Browse EEG files with filtering (alias for /list)
+// @access  Private
+router.get('/browse', auth, async (req, res) => {
+  try {
+    const { filterByOwner, page = 0, pageSize = 20, searchTerm } = req.query;
+    
+    let query = {};
+    
+    // Handle different filter types
+    if (filterByOwner === 'OwnData' || filterByOwner === 'Mine') {
+      query.userId = req.user.id;
+    } else if (filterByOwner === 'All' || !filterByOwner) {
+      // For regular users, show only their data
+      // Admin/DepartmentHead logic would go here if implemented
+      query.userId = req.user.id;
+    }
+    
+    // Add search functionality if searchTerm is provided
+    if (searchTerm) {
+      query.$or = [
+        { originalFilename: { $regex: searchTerm, $options: 'i' } },
+        { notes: { $regex: searchTerm, $options: 'i' } },
+        { tags: { $in: [new RegExp(searchTerm, 'i')] } }
+      ];
+    }
+    
+    // Pagination
+    const skip = parseInt(page) * parseInt(pageSize);
+    const limit = parseInt(pageSize);
+    
+    const totalCount = await EEGData.countDocuments(query);
+    const eegFiles = await EEGData.find(query)
+      .select('-data')
+      .sort({ uploadDate: -1 })
+      .skip(skip)
+      .limit(limit);
+    
+    // Transform data to match frontend expectations
+    const transformedData = eegFiles.map(file => ({
+      id: file._id,
+      filename: file.filename,
+      originalFilename: file.originalFilename,
+      format: file.format,
+      size: file.size,
+      uploadDate: file.uploadDate,
+      notes: file.notes || '',
+      tags: file.tags || [],
+      isOwner: file.userId.toString() === req.user.id,
+      accessType: 'Owner',
+      permission: 'ViewDownload',
+      ownerName: req.user.username || 'Unknown',
+      ownerEmail: req.user.email || 'Unknown',
+      ownerInstitution: 'Institution', // Could be added to user model
+      adhdAnalysis: file.svm_analysis ? {
+        performed: file.svm_analysis.performed || false,
+        result: file.svm_analysis.result,
+        confidence: file.svm_analysis.confidence
+      } : undefined
+    }));
+    
+    const response = {
+      data: transformedData,
+      totalCount,
+      page: parseInt(page),
+      pageSize: parseInt(pageSize),
+      totalPages: Math.ceil(totalCount / parseInt(pageSize)),
+      userRole: req.user.role || 'User',
+      canViewAll: req.user.role === 'admin' || req.user.role === 'departmenthead'
+    };
+    
+    res.json(response);
+  } catch (err) {
+    console.error('Error browsing EEG files:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/eeg/:id
 // @desc    Get EEG data by ID
 // @access  Private

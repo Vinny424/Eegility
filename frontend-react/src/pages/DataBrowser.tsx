@@ -51,6 +51,7 @@ import {
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { DataTable, Column } from '@/components/ui/DataTable'
 import { useAuth } from '@/hooks/useAuth'
+import { api } from '@/services/api'
 
 interface EegDataWithAccess {
   id: string
@@ -138,33 +139,18 @@ const DataBrowser: React.FC = () => {
         params.append('searchTerm', searchTerm)
       }
 
-      const response = await fetch(`/api/eegdata/browse?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-
-      if (response.ok) {
-        const result: DataBrowserResponse = await response.json()
-        setData(result.data)
-        setTotalCount(result.totalCount)
-        setTotalPages(result.totalPages)
-        setUserRole(result.userRole)
-        setCanViewAll(result.canViewAll)
-      } else {
-        toast({
-          title: 'Error',
-          description: 'Failed to fetch EEG data',
-          status: 'error',
-          duration: 5000,
-          isClosable: true
-        })
-      }
-    } catch (error) {
+      const response = await api.get<DataBrowserResponse>(`/eegdata/browse?${params}`)
+      const result = response.data
+      setData(result.data)
+      setTotalCount(result.totalCount)
+      setTotalPages(result.totalPages)
+      setUserRole(result.userRole)
+      setCanViewAll(result.canViewAll)
+    } catch (error: any) {
       console.error('Error fetching data:', error)
       toast({
         title: 'Error',
-        description: 'Network error occurred',
+        description: error.message || 'Failed to fetch EEG data',
         status: 'error',
         duration: 5000,
         isClosable: true
@@ -187,36 +173,24 @@ const DataBrowser: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`/api/eegdata/${eegData.id}/download`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+      const response = await api.get(`/eegdata/${eegData.id}/download`, {
+        responseType: 'blob'
       })
-
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = eegData.originalFilename
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-      } else {
-        toast({
-          title: 'Download Failed',
-          description: 'Unable to download file',
-          status: 'error',
-          duration: 5000,
-          isClosable: true
-        })
-      }
-    } catch (error) {
+      
+      const blob = response.data
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = eegData.originalFilename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error: any) {
       console.error('Download error:', error)
       toast({
         title: 'Error',
-        description: 'Download failed',
+        description: error.message || 'Download failed',
         status: 'error',
         duration: 5000,
         isClosable: true
@@ -249,39 +223,21 @@ const DataBrowser: React.FC = () => {
 
   const submitShareRequest = async () => {
     try {
-      const response = await fetch('/api/datasharing/requests', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(shareRequest)
+      await api.post('/datasharing/requests', shareRequest)
+      
+      toast({
+        title: 'Share Request Sent',
+        description: 'The sharing request has been sent successfully',
+        status: 'success',
+        duration: 5000,
+        isClosable: true
       })
-
-      if (response.ok) {
-        toast({
-          title: 'Share Request Sent',
-          description: 'The sharing request has been sent successfully',
-          status: 'success',
-          duration: 5000,
-          isClosable: true
-        })
-        setIsShareModalOpen(false)
-      } else {
-        const error = await response.text()
-        toast({
-          title: 'Share Failed',
-          description: error || 'Failed to send sharing request',
-          status: 'error',
-          duration: 5000,
-          isClosable: true
-        })
-      }
-    } catch (error) {
+      setIsShareModalOpen(false)
+    } catch (error: any) {
       console.error('Share error:', error)
       toast({
         title: 'Error',
-        description: 'Failed to send sharing request',
+        description: error.message || 'Failed to send sharing request',
         status: 'error',
         duration: 5000,
         isClosable: true

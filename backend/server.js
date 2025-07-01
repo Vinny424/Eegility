@@ -18,7 +18,7 @@ const eegRoutes = require('./routes/eegRoutes');
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(helmet());
@@ -42,6 +42,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/eeg', eegRoutes);
+app.use('/api/eegdata', eegRoutes);
 
 // Serve static files if in production
 if (process.env.NODE_ENV === 'production') {
